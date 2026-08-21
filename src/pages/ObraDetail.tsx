@@ -30,7 +30,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
 import {
   Dialog,
   DialogContent,
@@ -161,9 +160,6 @@ export default function ObraDetail() {
   }
 
   const badgeInfo = getStatusBadgeInfo(obra.status_classificacao)
-  const percLiq = obra.porcentagem_liquidada || 0
-  const percPrazo = obra.porcentagem_prazo_decorrido || 0
-  const descompasso = Math.max(0, percPrazo - percLiq)
 
   return (
     <div className="space-y-8 pb-16 animate-in fade-in duration-300">
@@ -209,10 +205,10 @@ export default function ObraDetail() {
       </div>
 
       {/* Hero Banner de Classificação e Apontamento Principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Card Estado & Apontamento (2 Colunas) */}
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+        {/* Card Estado & Apontamento */}
         <Card
-          className={`lg:col-span-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${badgeInfo.cardBorder} shadow-sm`}
+          className={`bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${badgeInfo.cardBorder} shadow-sm`}
         >
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -276,69 +272,6 @@ export default function ObraDetail() {
               </div>
             </div>
           </CardContent>
-        </Card>
-
-        {/* Card Gravidade G & Execução (1 Coluna) */}
-        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase text-slate-500">
-              Priorização Determinística
-            </CardDescription>
-            <div className="flex items-baseline justify-between">
-              <CardTitle className="text-3xl font-black text-slate-900 dark:text-white">
-                G = {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '0,00'}
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px] font-mono">
-                G = A × log₁₀(V) × S
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 text-xs">
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg space-y-1.5 text-slate-600 dark:text-slate-300 font-mono">
-              <div className="flex justify-between">
-                <span>A (Dias ÷ Periodicidade):</span>
-                <strong>
-                  {((obra.dias_sem_liquidacao || 0) / (obra.periodicidade_dias || 30)).toFixed(2)}
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span>V (Valor Global):</span>
-                <strong>
-                  {formatarMoeda(obra.valor_global_atual || obra.valor_global_original)}
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span>S (Multa % ÷ 10):</span>
-                <strong>
-                  {obra.multa_remissao_externa
-                    ? '1.00 (TR/Edital)'
-                    : ((obra.multa_max_percentual || 10) / 10).toFixed(2)}
-                </strong>
-              </div>
-            </div>
-
-            {/* Comparativo de Curva Físico-Financeira */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                <span>Prazo Decorrido: {percPrazo.toFixed(1)}%</span>
-                <span>Liquidado: {percLiq.toFixed(1)}%</span>
-              </div>
-              <div className="space-y-1">
-                <Progress value={percPrazo} className="h-2 bg-slate-200 dark:bg-slate-800" />
-                <Progress value={percLiq} className="h-2 bg-blue-100 dark:bg-blue-950" />
-              </div>
-              {descompasso >= 20 && (
-                <div className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Descompasso de {descompasso.toFixed(1)} p.p. detectado
-                </div>
-              )}
-            </div>
-          </CardContent>
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
-            Órgão: <strong>{obra.orgao}</strong> · Contratada:{' '}
-            <strong>{obra.contratada_nome}</strong>
-          </div>
         </Card>
       </div>
 
