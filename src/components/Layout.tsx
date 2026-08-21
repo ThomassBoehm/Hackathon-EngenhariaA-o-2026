@@ -59,11 +59,11 @@ export default function Layout({ children }: LayoutProps) {
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
 
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-lg bg-blue-700 flex items-center justify-center text-white shadow-md shadow-blue-700/20 group-hover:bg-blue-800 transition-colors">
+            <Link to="/" className="flex items-center gap-3 group min-w-0">
+              <div className="h-10 w-10 shrink-0 rounded-lg bg-blue-700 flex items-center justify-center text-white shadow-md shadow-blue-700/20 group-hover:bg-blue-800 transition-colors">
                 <FileCheck2 className="h-6 w-6" />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
                     SIGO
@@ -75,7 +75,10 @@ export default function Layout({ children }: LayoutProps) {
                     v2.4
                   </Badge>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-tight -mt-0.5">
+                <span
+                  className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-tighter truncate max-w-[200px] sm:max-w-[260px] md:max-w-none -mt-0.5"
+                  title="Sistema Inteligente de Gestão de Obrigações"
+                >
                   Sistema Inteligente de Gestão de Obrigações
                 </span>
               </div>
