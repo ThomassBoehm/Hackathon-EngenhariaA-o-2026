@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UploadCloud,
@@ -21,6 +21,7 @@ import { toast } from '@/hooks/use-toast'
 
 export default function ContratoUpload() {
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -516,30 +517,30 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
           </div>
 
           <div className="flex justify-center items-center gap-3">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={handleFileChange}
-                disabled={isReadingFile}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isReadingFile}
-                className="text-xs font-semibold bg-white dark:bg-slate-800"
-              >
-                {isReadingFile ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin text-blue-600" />
-                    Lendo arquivo...
-                  </>
-                ) : (
-                  'Selecionar Arquivo do Computador'
-                )}
-              </Button>
-            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={handleFileChange}
+              disabled={isReadingFile}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isReadingFile}
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-semibold bg-white dark:bg-slate-800"
+            >
+              {isReadingFile ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin text-blue-600" />
+                  Lendo arquivo...
+                </>
+              ) : (
+                'Selecionar Arquivo do Computador'
+              )}
+            </Button>
 
             {file && (
               <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950 px-3 py-1.5 rounded-md">
