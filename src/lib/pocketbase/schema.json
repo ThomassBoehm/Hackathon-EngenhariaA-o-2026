@@ -1,0 +1,725 @@
+{
+  "generatedAt": "2026-08-21T20:00:09.753Z",
+  "collections": [
+    {
+      "name": "users",
+      "type": "auth",
+      "apiRules": {
+        "list": "id = @request.auth.id",
+        "view": "id = @request.auth.id",
+        "create": "",
+        "update": "id = @request.auth.id",
+        "delete": "id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "obras",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "",
+        "update": "",
+        "delete": ""
+      },
+      "fields": [
+        {
+          "name": "numero_contrato",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "ano_contrato",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "processo_adm",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "objeto",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "orgao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "estado_uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tipo_obra",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "Edificação",
+            "Saneamento",
+            "Pavimentação/Vias",
+            "Habitação",
+            "Saúde/UBS",
+            "Educação/Escolas",
+            "Serviço Continuado",
+            "Aquisição/Outro"
+          ]
+        },
+        {
+          "name": "contratada_nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "contratada_cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_global_original",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor_global_atual",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data_assinatura",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_ordem_servico",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo_vigencia_meses",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_fim_vigencia",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "periodicidade_tipo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["explícita", "por etapa", "inferida", "ausente"]
+        },
+        {
+          "name": "periodicidade_dias",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "periodicidade_confianca",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["alta", "média", "baixa"]
+        },
+        {
+          "name": "evento_ancora",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "multa_max_percentual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "multa_remissao_externa",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "limite_aditivo_percentual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "carencia_dias",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_ultima_liquidacao",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_total_liquidado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "porcentagem_liquidada",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "porcentagem_prazo_decorrido",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dias_sem_liquidacao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_classificacao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["no_ritmo", "fora_do_ritmo", "prazo_vencido", "sem_dados"]
+        },
+        {
+          "name": "gravidade_score",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "resumo_motivo_status",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tem_inconsistencias",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tem_marco_vencido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "qtd_aditivos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_aditado_total",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "arquivo_pdf",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "extracao_ia_raw",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "origem_extracao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_obras_status ON obras (status_classificacao)",
+        "CREATE INDEX idx_obras_gravidade ON obras (gravidade_score)",
+        "CREATE INDEX idx_obras_contrato ON obras (numero_contrato)"
+      ]
+    },
+    {
+      "name": "obrigacoes",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "",
+        "update": "",
+        "delete": ""
+      },
+      "fields": [
+        {
+          "name": "obra_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "obras"
+        },
+        {
+          "name": "clausula",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "responsavel",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Contratada", "Administração"]
+        },
+        {
+          "name": "tipo_regua",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["marco_contratual", "liquidacao_medicao", "administrativo"]
+        },
+        {
+          "name": "prazo_texto",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_limite",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "penalidade_associada",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "penalidade_percentual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_cumprimento",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente", "no_prazo", "vencido", "cumprido", "sem_ancora"]
+        },
+        {
+          "name": "dias_atraso",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "trecho_original_pdf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "confianca",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["alta", "média", "baixa"]
+        },
+        {
+          "name": "remissao_externa",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_obrig_obra ON obrigacoes (obra_id)",
+        "CREATE INDEX idx_obrig_status ON obrigacoes (status_cumprimento)"
+      ]
+    },
+    {
+      "name": "inconsistencias",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "",
+        "update": "",
+        "delete": ""
+      },
+      "fields": [
+        {
+          "name": "obra_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "obras"
+        },
+        {
+          "name": "tipo_checagem",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "clausula_inexistente",
+            "extenso_divergente",
+            "divergencia_aritmetica",
+            "identificador_conflitante"
+          ]
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "localizacao_clausula",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "trecho_original",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_encontrado",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_esperado",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_validacao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente_analise", "confirmado_fiscal", "desconsiderado"]
+        },
+        {
+          "name": "parecer_fiscal",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_incons_obra ON inconsistencias (obra_id)"]
+    },
+    {
+      "name": "aditivos",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "",
+        "update": "",
+        "delete": ""
+      },
+      "fields": [
+        {
+          "name": "obra_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "obras"
+        },
+        {
+          "name": "numero_termo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo_aditivo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "Valor (Acréscimo)",
+            "Valor (Supressão)",
+            "Prazo (Prorrogação)",
+            "Misto (Prazo e Valor)",
+            "Qualitativo/Readequação"
+          ]
+        },
+        {
+          "name": "data_assinatura",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "justificativa",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_aditado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_aditado_individual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo_aditado_dias",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "limite_legal_percentual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "alerta_limite_ultrapassado",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_adit_obra ON aditivos (obra_id)"]
+    },
+    {
+      "name": "liquidacoes",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "",
+        "update": "",
+        "delete": ""
+      },
+      "fields": [
+        {
+          "name": "obra_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "obras"
+        },
+        {
+          "name": "numero_medicao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "numero_nota_empenho",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_liquidacao",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor_liquidado",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "percentual_medido",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_tramitacao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_liq_obra ON liquidacoes (obra_id)",
+        "CREATE INDEX idx_liq_data ON liquidacoes (data_liquidacao DESC)"
+      ]
+    }
+  ]
+}
