@@ -3,9 +3,9 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
+import { Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
-import ObrasList from './pages/ObrasList'
 import ObraDetail from './pages/ObraDetail'
 import ObraForm from './pages/ObraForm'
 import ContratoUpload from './pages/ContratoUpload'
@@ -22,7 +22,7 @@ const App = () => (
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/obras" element={<ObrasList />} />
+          <Route path="/obras" element={<Navigate to="/" replace />} />
           <Route path="/obras/nova" element={<ObraForm />} />
           <Route path="/obras/:id" element={<ObraDetail />} />
           <Route path="/obras/:id/editar" element={<ObraForm />} />

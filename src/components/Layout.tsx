@@ -36,8 +36,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Obras & Contratos', href: '/obras', icon: Building2 },
+    { name: 'Dashboard & Obras', href: '/', icon: LayoutDashboard },
     { name: 'Upload & IA', href: '/upload', icon: UploadCloud, badge: 'IA Leitora' },
     { name: 'Classificação & Gravidade', href: '/classificacao', icon: ShieldAlert },
     { name: 'Busca Avançada', href: '/busca', icon: Search },

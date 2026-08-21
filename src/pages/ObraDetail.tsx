@@ -118,7 +118,7 @@ export default function ObraDetail() {
         description: 'O contrato solicitado não existe no banco.',
         variant: 'destructive',
       })
-      navigate('/obras')
+      navigate('/')
       return
     }
 
@@ -170,7 +170,7 @@ export default function ObraDetail() {
       {/* Top Header / Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-3">
-          <Link to="/obras">
+          <Link to="/">
             <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-900">
               <ArrowLeft className="h-5 w-5" />
             </Button>

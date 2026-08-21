@@ -1,58 +1,78 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Building2,
   AlertTriangle,
   Clock,
   CheckCircle2,
   HelpCircle,
-  TrendingUp,
-  TrendingDown,
   UploadCloud,
-  ArrowRight,
-  FileText,
-  ShieldAlert,
-  DollarSign,
-  Calendar,
-  Filter,
-  BarChart3,
-  ExternalLink,
+  PlusCircle,
+  Search,
+  ArrowUpDown,
   Layers,
   Sparkles,
+  Eye,
+  Trash2,
+  Edit,
+  ShieldAlert,
 } from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
-import { getObrasList } from '@/services/obrasService'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { getObrasList, deleteObra } from '@/services/obrasService'
 import { ObraRecord, StatusClassificacao } from '@/types/sigo'
-import { formatarMoeda, formatarData, getStatusBadgeInfo } from '@/lib/sigoEngine'
+import { formatarMoeda, getStatusBadgeInfo } from '@/lib/sigoEngine'
+import { toast } from '@/hooks/use-toast'
 
 export default function Dashboard() {
   const [obras, setObras] = useState<ObraRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [filtroStatus, setFiltroStatus] = useState<StatusClassificacao | 'todos'>('todos')
-  const navigate = useNavigate()
+
+  // Filtros avançados integrados
+  const [buscaTexto, setBuscaTexto] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos')
+  const [filtroTipo, setFiltroTipo] = useState<string>('todos')
+  const [filtroOrgao, setFiltroOrgao] = useState<string>('todos')
+  const [filtroInconsistencia, setFiltroInconsistencia] = useState<string>('todos')
+  const [ordenacao, setOrdenacao] = useState<
+    'gravidade' | 'valor_desc' | 'valor_asc' | 'recente' | 'dias_liq'
+  >('gravidade')
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true)
-      const data = await getObrasList()
-      setObras(data)
-      setLoading(false)
-    }
     loadData()
   }, [])
 
-  // Métricas
-  const totalObras = obras.length
+  async function loadData() {
+    setLoading(true)
+    const data = await getObrasList()
+    setObras(data)
+    setLoading(false)
+  }
+
+  async function handleDelete(id: string, titulo: string) {
+    if (window.confirm(`Confirma a exclusão do contrato da obra "${titulo}"?`)) {
+      const ok = await deleteObra(id)
+      if (ok) {
+        toast({
+          title: 'Contrato removido',
+          description: 'O registro foi excluído da base do SIGO.',
+        })
+        loadData()
+      }
+    }
+  }
+
+  // Métricas de Resumo
   const prazoVencido = obras.filter((o) => o.status_classificacao === 'prazo_vencido')
   const foraRitmo = obras.filter((o) => o.status_classificacao === 'fora_do_ritmo')
   const noRitmo = obras.filter((o) => o.status_classificacao === 'no_ritmo')
@@ -69,14 +89,73 @@ export default function Dashboard() {
   const obrasComInconsistencias = obras.filter((o) => o.tem_inconsistencias).length
   const obrasComMarcoVencido = obras.filter((o) => o.tem_marco_vencido).length
 
-  // Filtragem
-  const obrasFiltradas =
-    filtroStatus === 'todos' ? obras : obras.filter((o) => o.status_classificacao === filtroStatus)
+  // Lista de órgãos únicos para o dropdown
+  const orgaosDisponiveis = Array.from(new Set(obras.map((o) => o.orgao).filter(Boolean)))
 
-  // Ordenadas por Gravidade
-  const rankingGravidade = [...obrasFiltradas].sort(
-    (a, b) => (b.gravidade_score || 0) - (a.gravidade_score || 0),
-  )
+  // Filtragem
+  const obrasFiltradas = obras.filter((obra) => {
+    // Busca texto
+    const matchBusca =
+      !buscaTexto ||
+      obra.titulo.toLowerCase().includes(buscaTexto.toLowerCase()) ||
+      obra.numero_contrato.toLowerCase().includes(buscaTexto.toLowerCase()) ||
+      (obra.processo_adm && obra.processo_adm.toLowerCase().includes(buscaTexto.toLowerCase())) ||
+      obra.contratada_nome.toLowerCase().includes(buscaTexto.toLowerCase()) ||
+      (obra.municipio && obra.municipio.toLowerCase().includes(buscaTexto.toLowerCase())) ||
+      obra.objeto.toLowerCase().includes(buscaTexto.toLowerCase())
+
+    // Status
+    const matchStatus = filtroStatus === 'todos' || obra.status_classificacao === filtroStatus
+
+    // Tipo
+    const matchTipo = filtroTipo === 'todos' || obra.tipo_obra === filtroTipo
+
+    // Órgão
+    const matchOrgao = filtroOrgao === 'todos' || obra.orgao === filtroOrgao
+
+    // Inconsistência
+    const matchInc =
+      filtroInconsistencia === 'todos' ||
+      (filtroInconsistencia === 'com_inconsistencia' && obra.tem_inconsistencias) ||
+      (filtroInconsistencia === 'sem_inconsistencia' && !obra.tem_inconsistencias)
+
+    return matchBusca && matchStatus && matchTipo && matchOrgao && matchInc
+  })
+
+  // Ordenação
+  const obrasOrdenadas = [...obrasFiltradas].sort((a, b) => {
+    if (ordenacao === 'gravidade') {
+      return (b.gravidade_score || 0) - (a.gravidade_score || 0)
+    }
+    if (ordenacao === 'valor_desc') {
+      return (
+        (b.valor_global_atual || b.valor_global_original || 0) -
+        (a.valor_global_atual || a.valor_global_original || 0)
+      )
+    }
+    if (ordenacao === 'valor_asc') {
+      return (
+        (a.valor_global_atual || a.valor_global_original || 0) -
+        (b.valor_global_atual || b.valor_global_original || 0)
+      )
+    }
+    if (ordenacao === 'dias_liq') {
+      return (b.dias_sem_liquidacao || 0) - (a.dias_sem_liquidacao || 0)
+    }
+    if (ordenacao === 'recente') {
+      return new Date(b.created || '').getTime() - new Date(a.created || '').getTime()
+    }
+    return 0
+  })
+
+  const limparFiltros = () => {
+    setBuscaTexto('')
+    setFiltroStatus('todos')
+    setFiltroTipo('todos')
+    setFiltroOrgao('todos')
+    setFiltroInconsistencia('todos')
+    setOrdenacao('gravidade')
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -104,12 +183,13 @@ export default function Dashboard() {
                 Extrair Novo Contrato (PDF)
               </Button>
             </Link>
-            <Link to="/obras">
+            <Link to="/obras/nova">
               <Button
                 variant="outline"
                 className="bg-white/10 hover:bg-white/20 text-white border-white/20"
               >
-                Ver Carteira Completa
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Cadastrar Obra Manual
               </Button>
             </Link>
           </div>
@@ -317,20 +397,16 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Tabela de Priorização Ranqueada por Gravidade */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Seção Principal: Barra de Filtros Avançados + Grid de Cards de Obras & Contratos */}
+      <div className="space-y-6 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Lista Priorizada de Contratos
-              </h3>
-              <Badge variant="outline" className="font-mono text-xs">
-                {obrasFiltradas.length} {obrasFiltradas.length === 1 ? 'contrato' : 'contratos'}
-              </Badge>
-            </div>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Building2 className="h-6 w-6 text-blue-700" />
+              Carteira de Obras e Contratos Públicos
+            </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Ordenação estrita pela fórmula de gravidade:{' '}
+              Filtros avançados e ordenação por índice de gravidade{' '}
               <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-blue-700 dark:text-blue-300">
                 G = A × log₁₀(V) × S
               </code>
@@ -338,122 +414,256 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link to="/obras">
-              <Button variant="outline" size="sm" className="text-xs font-semibold">
-                Abrir Grid Completo
-                <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-              </Button>
-            </Link>
+            <Badge variant="outline" className="font-mono text-xs px-2.5 py-1">
+              {obrasOrdenadas.length} de {obras.length} {obras.length === 1 ? 'obra' : 'obras'}
+            </Badge>
           </div>
         </div>
 
+        {/* Barra de Filtros Avançados */}
+        <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <CardContent className="p-4 space-y-4">
+            {/* Busca Textual & Ordenação */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Buscar por número do contrato, título, contratada, processo administrativo, município..."
+                  value={buscaTexto}
+                  onChange={(e) => setBuscaTexto(e.target.value)}
+                  className="pl-9 text-sm"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Select value={ordenacao} onValueChange={(val: any) => setOrdenacao(val)}>
+                  <SelectTrigger className="w-[200px] text-xs font-medium">
+                    <ArrowUpDown className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gravidade">Maior Gravidade (G)</SelectItem>
+                    <SelectItem value="dias_liq">Mais Dias sem Liquidação</SelectItem>
+                    <SelectItem value="valor_desc">Maior Valor Global</SelectItem>
+                    <SelectItem value="valor_asc">Menor Valor Global</SelectItem>
+                    <SelectItem value="recente">Mais Recente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Filtros em Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+              {/* Status */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                  Estado Contratual
+                </label>
+                <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Estados</SelectItem>
+                    <SelectItem value="prazo_vencido">Prazo Vencido</SelectItem>
+                    <SelectItem value="fora_do_ritmo">Fora do Ritmo</SelectItem>
+                    <SelectItem value="no_ritmo">No Ritmo Previsto</SelectItem>
+                    <SelectItem value="sem_dados">Sem Dados de Execução</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tipo de Obra */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                  Tipo de Obra
+                </label>
+                <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Tipos</SelectItem>
+                    <SelectItem value="Edificação">Edificação</SelectItem>
+                    <SelectItem value="Saneamento">Saneamento</SelectItem>
+                    <SelectItem value="Pavimentação/Vias">Pavimentação/Vias</SelectItem>
+                    <SelectItem value="Habitação">Habitação</SelectItem>
+                    <SelectItem value="Saúde/UBS">Saúde/UBS</SelectItem>
+                    <SelectItem value="Educação/Escolas">Educação/Escolas</SelectItem>
+                    <SelectItem value="Serviço Continuado">Serviço Continuado</SelectItem>
+                    <SelectItem value="Aquisição/Outro">Aquisição/Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Órgão */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                  Órgão / Secretaria
+                </label>
+                <Select value={filtroOrgao} onValueChange={setFiltroOrgao}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Órgão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Órgãos</SelectItem>
+                    {orgaosDisponiveis.map((org) => (
+                      <SelectItem key={org} value={org}>
+                        {org}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Inconsistências de Texto */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                  Inconsistências (4 Checagens)
+                </label>
+                <Select value={filtroInconsistencia} onValueChange={setFiltroInconsistencia}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Inconsistências" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas</SelectItem>
+                    <SelectItem value="com_inconsistencia">Com Inconsistência Detectada</SelectItem>
+                    <SelectItem value="sem_inconsistencia">Sem Inconsistências</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {(buscaTexto ||
+              filtroStatus !== 'todos' ||
+              filtroTipo !== 'todos' ||
+              filtroOrgao !== 'todos' ||
+              filtroInconsistencia !== 'todos') && (
+              <div className="flex items-center justify-between pt-2 text-xs text-slate-500">
+                <span>
+                  Exibindo <strong>{obrasOrdenadas.length}</strong> de {obras.length} contratos
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={limparFiltros}
+                  className="h-7 text-xs text-blue-700"
+                >
+                  Limpar todos os filtros
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Grid de Cards de Obras (3 Colunas) */}
         {loading ? (
-          <div className="p-12 text-center text-slate-500 text-sm">
-            Carregando base de contratos do SIGO...
+          <div className="p-16 text-center text-slate-500 text-sm bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            Carregando dados das obras do SIGO...
           </div>
-        ) : rankingGravidade.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-sm">
-            Nenhum contrato encontrado para o filtro selecionado.
+        ) : obrasOrdenadas.length === 0 ? (
+          <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
+            <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">
+              Nenhum contrato encontrado
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Tente modificar os termos de busca ou filtros aplicados acima.
+            </p>
+            <Button variant="outline" size="sm" onClick={limparFiltros} className="mt-4 text-xs">
+              Restaurar Filtros
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200 dark:divide-slate-800">
-            {rankingGravidade.map((obra) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {obrasOrdenadas.map((obra) => {
               const badgeInfo = getStatusBadgeInfo(obra.status_classificacao)
-              const temMarco = obra.tem_marco_vencido
-              const temInc = obra.tem_inconsistencias
+              const percLiq = obra.porcentagem_liquidada || 0
+              const percPrazo = obra.porcentagem_prazo_decorrido || 0
 
               return (
-                <div
+                <Card
                   key={obra.id}
-                  className={`p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${badgeInfo.cardBorder}`}
+                  className={`bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex flex-col justify-between hover:shadow-md transition-all overflow-hidden relative ${badgeInfo.cardBorder}`}
                 >
-                  {/* Informações Principais do Contrato */}
-                  <div className="space-y-2 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-bold text-sm text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                  {/* Header do Card */}
+                  <CardHeader className="p-5 pb-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs font-bold text-blue-900 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
                         Nº {obra.numero_contrato}
                       </span>
 
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeInfo.bg}`}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border ${badgeInfo.bg}`}
                       >
-                        <span className={`w-2 h-2 rounded-full ${badgeInfo.dot}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${badgeInfo.dot}`} />
                         {badgeInfo.label}
                       </span>
+                    </div>
 
+                    <CardTitle className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 hover:text-blue-700">
+                      <Link to={`/obras/${obra.id}`}>{obra.titulo}</Link>
+                    </CardTitle>
+
+                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                      {obra.objeto}
+                    </CardDescription>
+                  </CardHeader>
+
+                  {/* Conteúdo Central */}
+                  <CardContent className="p-5 pt-0 space-y-3.5 text-xs">
+                    {/* Badges de Destaque */}
+                    <div className="flex flex-wrap gap-1.5">
                       {obra.tipo_obra && (
-                        <Badge variant="secondary" className="text-[11px]">
+                        <Badge variant="secondary" className="text-[10px]">
                           {obra.tipo_obra}
                         </Badge>
                       )}
-
-                      {temMarco && (
-                        <Badge className="bg-red-600 text-white text-[11px] font-semibold hover:bg-red-700">
-                          Marco Vencido
-                        </Badge>
+                      {obra.tem_marco_vencido && (
+                        <Badge className="bg-red-600 text-white text-[10px]">Marco Vencido</Badge>
                       )}
-
-                      {temInc && (
+                      {obra.tem_inconsistencias && (
                         <Badge
                           variant="outline"
-                          className="text-[11px] border-amber-400 text-amber-800 bg-amber-50 dark:bg-amber-950 dark:text-amber-300"
+                          className="text-[10px] border-amber-400 text-amber-800 bg-amber-50 dark:bg-amber-950 dark:text-amber-300"
                         >
-                          Inconsistência de Texto
+                          Inconsistência Texto
                         </Badge>
                       )}
+                      {obra.qtd_aditivos && obra.qtd_aditivos > 0 ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-300"
+                        >
+                          {obra.qtd_aditivos} Aditivo(s) (+{obra.percentual_aditado_total}%)
+                        </Badge>
+                      ) : null}
                     </div>
 
-                    <h4 className="font-bold text-base text-slate-900 dark:text-white leading-snug">
-                      <Link
-                        to={`/obras/${obra.id}`}
-                        className="hover:text-blue-700 hover:underline"
-                      >
-                        {obra.titulo}
-                      </Link>
-                    </h4>
-
-                    {/* Justificativa / Apontamento com Citação */}
-                    <div className="p-2.5 rounded-lg bg-slate-100/90 dark:bg-slate-800/80 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                      <div className="flex items-start gap-1.5">
-                        <span className="font-bold text-slate-900 dark:text-white shrink-0">
-                          Apontamento:
-                        </span>
-                        <span>
-                          {obra.resumo_motivo_status ||
-                            'Em conformidade com as cláusulas contratuais.'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
-                      <span>
-                        Órgão:{' '}
-                        <strong>
-                          {obra.orgao} ({obra.municipio}/{obra.estado_uf})
-                        </strong>
-                      </span>
-                      <span>
-                        Contratada: <strong>{obra.contratada_nome}</strong>
-                      </span>
-                      <span>
-                        Valor Atual:{' '}
-                        <strong>
+                    {/* Detalhes Financeiros e Gravidade */}
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg space-y-2 border border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Valor Atual:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
                           {formatarMoeda(obra.valor_global_atual || obra.valor_global_original)}
-                        </strong>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Painel Lateral com Gravidade e Indicadores */}
-                  <div className="flex sm:items-center justify-between lg:flex-col lg:items-end gap-3 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-800">
-                    {/* Gravidade Score */}
-                    <div className="text-left lg:text-right">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        Índice Gravidade (G)
+                        </span>
                       </div>
-                      <div className="flex items-baseline gap-1 lg:justify-end">
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Dias s/ Liquidação:</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {obra.dias_sem_liquidacao !== undefined
+                            ? `${obra.dias_sem_liquidacao} dias`
+                            : '—'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
+                        <span className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
+                          Gravidade (G):
+                        </span>
                         <span
-                          className={`text-2xl font-black ${
+                          className={`font-mono font-black text-sm ${
                             obra.gravidade_score > 10
                               ? 'text-red-600'
                               : obra.gravidade_score > 3
@@ -463,31 +673,88 @@ export default function Dashboard() {
                                   : 'text-slate-400'
                           }`}
                         >
-                          {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '—'}
+                          {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '0,00'}
                         </span>
-                        {obra.periodicidade_tipo === 'ausente' && (
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            (sem periodicidade)
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-500">
-                        {obra.dias_sem_liquidacao || 0} dias sem liq.
                       </div>
                     </div>
 
-                    {/* Botão para ver Contrato / Apontamentos */}
+                    {/* Execução Comparada (Prazo x Liquidado) */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[11px] text-slate-500">
+                        <span>
+                          Prazo Decorrido: <strong>{percPrazo.toFixed(0)}%</strong>
+                        </span>
+                        <span>
+                          Liquidado: <strong>{percLiq.toFixed(0)}%</strong>
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-slate-600 h-full rounded-full"
+                            style={{ width: `${Math.min(100, percPrazo)}%` }}
+                          />
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-blue-600 h-full rounded-full"
+                            style={{ width: `${Math.min(100, percLiq)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 space-y-0.5 pt-1">
+                      <div>
+                        Contratada:{' '}
+                        <strong className="text-slate-700 dark:text-slate-300">
+                          {obra.contratada_nome}
+                        </strong>
+                      </div>
+                      <div>
+                        Órgão:{' '}
+                        <strong className="text-slate-700 dark:text-slate-300">
+                          {obra.orgao} ({obra.municipio}/{obra.estado_uf})
+                        </strong>
+                      </div>
+                    </div>
+                  </CardContent>
+
+                  {/* Footer de Ações */}
+                  <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <Link to={`/obras/${obra.id}`}>
                       <Button
                         size="sm"
-                        className="bg-slate-900 hover:bg-blue-700 text-white text-xs font-semibold"
+                        className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold h-8"
                       >
-                        Fiscalizar Obra
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Apontamentos
                       </Button>
                     </Link>
+
+                    <div className="flex items-center gap-1">
+                      <Link to={`/obras/${obra.id}/editar`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:text-blue-700"
+                          title="Editar Contrato"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:text-red-600"
+                        onClick={() => handleDelete(obra.id, obra.titulo)}
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                </Card>
               )
             })}
           </div>
@@ -546,24 +813,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  )
-}
-
-function ChevronRight(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
   )
 }

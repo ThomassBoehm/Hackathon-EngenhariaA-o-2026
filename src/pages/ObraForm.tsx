@@ -97,7 +97,7 @@ export default function ObraForm() {
         description: 'Contrato não encontrado no banco de dados.',
         variant: 'destructive',
       })
-      navigate('/obras')
+      navigate('/')
     }
     setLoading(false)
   }
@@ -189,12 +189,7 @@ export default function ObraForm() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/obras')}
-            className="text-xs"
-          >
+          <Button type="button" variant="outline" onClick={() => navigate('/')} className="text-xs">
             Cancelar
           </Button>
           <Button
@@ -718,8 +713,8 @@ export default function ObraForm() {
 
       {/* Botões de Submissão */}
       <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="outline" onClick={() => navigate('/obras')}>
-          Voltar para Lista
+        <Button type="button" variant="outline" onClick={() => navigate('/')}>
+          Voltar para o Dashboard
         </Button>
         <Button
           type="submit"
