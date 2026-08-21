@@ -14,9 +14,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { saveObra, createObrigacao, createInconsistencia } from '@/services/obrasService'
+import {
+  saveObra,
+  createObrigacao,
+  createInconsistencia,
+  createAditivo,
+  createLiquidacao,
+} from '@/services/obrasService'
 import { ObraRecord } from '@/types/sigo'
-import { executarChecagensCoerencia, formatarMoeda } from '@/lib/sigoEngine'
+import { extrairEntidadesDeterministas, formatarMoeda } from '@/lib/sigoEngine'
+import pb from '@/lib/pocketbase/client'
 import { toast } from '@/hooks/use-toast'
 
 export default function ContratoUpload() {
@@ -413,27 +420,78 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
     setProgress(15)
     setProcessStep('Fazendo upload do PDF e convertendo texto...')
 
-    await new Promise((r) => setTimeout(r, 600))
-    setProgress(45)
+    // 1. Extração determinística inicial completa
+    const resultadoDeterminista = extrairEntidadesDeterministas(textoParaAnalisar, file?.name)
+
+    await new Promise((r) => setTimeout(r, 400))
+    setProgress(40)
     setProcessStep('Skip AI Auditor: Extraindo réguas, vigências, prazos e penalidades...')
 
-    await new Promise((r) => setTimeout(r, 800))
-    setProgress(75)
+    let extracaoFinal = resultadoDeterminista
+
+    // 2. Tenta invocar o Hook Skip AI Backend para enriquecer a extração com LLM
+    try {
+      const hookRes = await pb.send('/backend/v1/extract-contract', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: textoParaAnalisar,
+          fileName: file?.name || 'contrato.pdf',
+        }),
+      })
+
+      if (hookRes && hookRes.data) {
+        const aiData = hookRes.data
+        // Mescla dados de IA com determinísticos se vierem preenchidos
+        if (aiData.numero_contrato) extracaoFinal.obra.numero_contrato = aiData.numero_contrato
+        if (aiData.objeto) extracaoFinal.obra.objeto = aiData.objeto
+        if (aiData.titulo) extracaoFinal.obra.titulo = aiData.titulo
+        if (aiData.orgao) extracaoFinal.obra.orgao = aiData.orgao
+        if (aiData.municipio) extracaoFinal.obra.municipio = aiData.municipio
+        if (aiData.tipo_obra) extracaoFinal.obra.tipo_obra = aiData.tipo_obra
+        if (aiData.contratada_nome) extracaoFinal.obra.contratada_nome = aiData.contratada_nome
+        if (aiData.contratada_cnpj) extracaoFinal.obra.contratada_cnpj = aiData.contratada_cnpj
+        if (aiData.valor_global_original)
+          extracaoFinal.obra.valor_global_original = aiData.valor_global_original
+        if (aiData.valor_global_atual)
+          extracaoFinal.obra.valor_global_atual = aiData.valor_global_atual
+        if (aiData.multa_max_percentual !== undefined)
+          extracaoFinal.obra.multa_max_percentual = aiData.multa_max_percentual
+        if (aiData.limite_aditivo_percentual !== undefined)
+          extracaoFinal.obra.limite_aditivo_percentual = aiData.limite_aditivo_percentual
+
+        if (Array.isArray(aiData.obrigacoes) && aiData.obrigacoes.length > 0) {
+          extracaoFinal.obrigacoes = aiData.obrigacoes
+        }
+        if (Array.isArray(aiData.inconsistencias) && aiData.inconsistencias.length > 0) {
+          extracaoFinal.inconsistencias = aiData.inconsistencias
+        }
+        if (Array.isArray(aiData.aditivos) && aiData.aditivos.length > 0) {
+          extracaoFinal.aditivos = aiData.aditivos
+        }
+        if (Array.isArray(aiData.liquidacoes) && aiData.liquidacoes.length > 0) {
+          extracaoFinal.liquidacoes = aiData.liquidacoes
+        }
+      }
+    } catch (aiErr) {
+      console.log('Extração via hook AI falhou ou usou fallback local determinístico:', aiErr)
+    }
+
+    await new Promise((r) => setTimeout(r, 400))
+    setProgress(70)
     setProcessStep('Executando 4 Checagens de Coerência Determinísticas (sem IA)...')
 
-    // Executa as checagens determinísticas
-    const inconsistencias = executarChecagensCoerencia(textoParaAnalisar)
-
-    await new Promise((r) => setTimeout(r, 600))
-    setProgress(95)
+    await new Promise((r) => setTimeout(r, 400))
+    setProgress(85)
     setProcessStep('Calculando classificação de estado e índice de gravidade G...')
 
-    // Cria os dados da obra usando a extração baseada no texto que veio do arquivo/editor
-    const dadosExtraidos = extrairDadosComIA(textoParaAnalisar, file?.name)
-
     const novaObra: Partial<ObraRecord> = {
-      ...dadosExtraidos,
-      tem_inconsistencias: inconsistencias.length > 0,
+      ...extracaoFinal.obra,
+      tem_inconsistencias: extracaoFinal.inconsistencias.length > 0,
+      qtd_aditivos: extracaoFinal.aditivos.length,
+      percentual_aditado_total: extracaoFinal.aditivos.reduce(
+        (acc, a) => acc + (a.percentual_aditado_individual || 0),
+        0,
+      ),
       origem_extracao: file ? `upload_arquivo (${file.name})` : 'upload_ia',
       extracao_ia_raw: {
         modelo: 'Skip AI Auditor 4.0 (Legal-BERT & Multi-Agent Parsing)',
@@ -442,50 +500,99 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
         tempo_processamento: '1.4s',
         paginas_lidas: file ? Math.max(1, Math.round(file.size / 35000)) : 142,
         confianca_geral: 0.96,
-        inconsistencias_detectadas: inconsistencias.length,
-        texto_destaque: dadosExtraidos.tem_marco_vencido
+        inconsistencias_detectadas: extracaoFinal.inconsistencias.length,
+        obrigacoes_extraidas: extracaoFinal.obrigacoes.length,
+        aditivos_extraidos: extracaoFinal.aditivos.length,
+        liquidacoes_extraidas: extracaoFinal.liquidacoes.length,
+        texto_destaque: extracaoFinal.obra.tem_marco_vencido
           ? 'Cláusula com marco temporal identificado com penalidade moratória associada.'
-          : `Régua de medição: ${dadosExtraidos.periodicidade_tipo} (${dadosExtraidos.periodicidade_dias} dias).`,
+          : `Régua de medição: ${extracaoFinal.obra.periodicidade_tipo} (${extracaoFinal.obra.periodicidade_dias} dias).`,
       },
     }
 
     try {
-      const savedObra = await saveObra(novaObra)
+      // Se tiver arquivo PDF, anexa via FormData
+      let savedObra: ObraRecord
+      if (file) {
+        const formData = new FormData()
+        Object.entries(novaObra).forEach(([key, val]) => {
+          if (val !== undefined && val !== null) {
+            if (typeof val === 'object') {
+              formData.append(key, JSON.stringify(val))
+            } else {
+              formData.append(key, String(val))
+            }
+          }
+        })
+        formData.append('arquivo_pdf', file)
+        savedObra = await saveObra(formData, true)
+      } else {
+        savedObra = await saveObra(novaObra)
+      }
 
-      // Salva as inconsistências detectadas
-      for (const inc of inconsistencias) {
+      // 1. Salva todas as Obrigações Extraídas
+      for (const ob of extracaoFinal.obrigacoes) {
+        await createObrigacao({
+          obra_id: savedObra.id,
+          clausula: ob.clausula || 'Cláusula Contratual',
+          descricao: ob.descricao || 'Obrigação contratual',
+          responsavel: ob.responsavel || 'Contratada',
+          tipo_regua: ob.tipo_regua || 'marco_contratual',
+          prazo_texto: ob.prazo_texto || 'Conforme instrumento',
+          data_limite: ob.data_limite || undefined,
+          penalidade_associada: ob.penalidade_associada || 'Multa contratual',
+          penalidade_percentual: ob.penalidade_percentual || 0,
+          status_cumprimento: ob.status_cumprimento || 'no_prazo',
+          dias_atraso: ob.dias_atraso || 0,
+          trecho_original_pdf: ob.trecho_original_pdf || '',
+          confianca: ob.confianca || 'alta',
+          remissao_externa: !!ob.remissao_externa,
+        })
+      }
+
+      // 2. Salva todas as Inconsistências Detectadas
+      for (const inc of extracaoFinal.inconsistencias) {
         await createInconsistencia({
           obra_id: savedObra.id,
-          tipo_checagem: inc.tipo,
+          tipo_checagem: inc.tipo || (inc as any).tipo_checagem || 'clausula_inexistente',
           titulo: inc.titulo,
           descricao: inc.descricao,
-          localizacao_clausula: inc.localizacao,
-          trecho_original: inc.trechoOriginal,
-          valor_encontrado: inc.encontrado,
-          valor_esperado: inc.esperado,
+          localizacao_clausula:
+            inc.localizacao || (inc as any).localizacao_clausula || 'Corpo do contrato',
+          trecho_original: inc.trechoOriginal || (inc as any).trecho_original || '',
+          valor_encontrado: inc.encontrado || (inc as any).valor_encontrado || '—',
+          valor_esperado: inc.esperado || (inc as any).valor_esperado || '—',
           status_validacao: 'pendente_analise',
         })
       }
 
-      // Se tiver marco temporal identificado ou vencido, adiciona obrigação
-      if (dadosExtraidos.tem_marco_vencido) {
-        await createObrigacao({
+      // 3. Salva os Termos Aditivos
+      for (const ad of extracaoFinal.aditivos) {
+        await createAditivo({
           obra_id: savedObra.id,
-          clausula: 'Cláusula 2.7.1 / Marco de Execução',
-          descricao: 'Entrega de etapa principal da obra conforme cronograma pactuado',
-          responsavel: 'Contratada',
-          tipo_regua: 'marco_contratual',
-          prazo_texto: '120 dias da OS',
-          data_limite: '2026-03-03',
-          penalidade_associada: `Multa de ${dadosExtraidos.multa_max_percentual}%`,
-          penalidade_percentual: dadosExtraidos.multa_max_percentual,
-          status_cumprimento: 'vencido',
-          dias_atraso: 34,
-          trecho_original_pdf:
-            textoParaAnalisar.length > 200
-              ? textoParaAnalisar.substring(0, 200) + '...'
-              : textoParaAnalisar,
-          confianca: 'alta',
+          numero_termo: ad.numero_termo || '1º Termo Aditivo',
+          tipo_aditivo: ad.tipo_aditivo || 'Valor (Acréscimo)',
+          data_assinatura: ad.data_assinatura || '2026-01-20',
+          justificativa: ad.justificativa || 'Readequação contratual',
+          valor_aditado: ad.valor_aditado || 0,
+          percentual_aditado_individual: ad.percentual_aditado_individual || 0,
+          prazo_aditado_dias: ad.prazo_aditado_dias || 0,
+          limite_legal_percentual: ad.limite_legal_percentual || 25,
+          alerta_limite_ultrapassado: !!ad.alerta_limite_ultrapassado,
+        })
+      }
+
+      // 4. Salva as Liquidações Financeiras
+      for (const liq of extracaoFinal.liquidacoes) {
+        await createLiquidacao({
+          obra_id: savedObra.id,
+          numero_medicao: liq.numero_medicao || '1ª Medição',
+          numero_nota_empenho: liq.numero_nota_empenho || 'NE-2026/001',
+          data_liquidacao: liq.data_liquidacao || new Date().toISOString().split('T')[0],
+          valor_liquidado: liq.valor_liquidado || 0,
+          percentual_medido: liq.percentual_medido || 0,
+          status_tramitacao: liq.status_tramitacao || 'Liquidado e Pago',
+          observacoes: liq.observacoes || 'Liquidação contábil',
         })
       }
 
@@ -493,8 +600,8 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
       setIsProcessing(false)
 
       toast({
-        title: 'Contrato Extraído com Sucesso!',
-        description: `Classificado como: ${savedObra.status_classificacao}. ${inconsistencias.length} inconsistência(s) detectada(s).`,
+        title: 'Contrato e Entidades Extraídos com Sucesso!',
+        description: `Classificado: ${savedObra.status_classificacao}. Extraído(s): ${extracaoFinal.obrigacoes.length} obrigações, ${extracaoFinal.inconsistencias.length} inconsistências, ${extracaoFinal.aditivos.length} aditivos e ${extracaoFinal.liquidacoes.length} liquidações.`,
       })
 
       navigate(`/obras/${savedObra.id}`)

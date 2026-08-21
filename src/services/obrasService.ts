@@ -82,33 +82,47 @@ export async function getLiquidacoesByObra(obraId: string): Promise<LiquidacaoRe
   }
 }
 
-export async function saveObra(data: Partial<ObraRecord>): Promise<ObraRecord> {
+export async function saveObra(
+  data: Partial<ObraRecord> | FormData,
+  isFormData = false,
+): Promise<ObraRecord> {
+  if (isFormData && data instanceof FormData) {
+    const id = data.get('id') as string | null
+    if (id) {
+      data.delete('id')
+      return await pb.collection('obras').update<ObraRecord>(id, data)
+    } else {
+      return await pb.collection('obras').create<ObraRecord>(data)
+    }
+  }
+
+  const plainData = data as Partial<ObraRecord>
   // Recalcula classificação determinística antes de salvar
   const params = {
-    diasSemLiquidacao: data.dias_sem_liquidacao || 0,
-    periodicidadeDias: data.periodicidade_dias || 30,
-    carenciaDias: data.carencia_dias || 15,
-    porcentagemPrazoDecorrido: data.porcentagem_prazo_decorrido || 0,
-    porcentagemLiquidada: data.porcentagem_liquidada || 0,
-    temMarcoVencido: !!data.tem_marco_vencido,
-    periodicidadeTipo: data.periodicidade_tipo || 'explícita',
-    valorGlobal: data.valor_global_atual || data.valor_global_original || 0,
-    multaMaxPercentual: data.multa_max_percentual || 10,
-    multaRemissaoExterna: !!data.multa_remissao_externa,
-    temAncora: !!data.data_ordem_servico || !!data.data_assinatura,
+    diasSemLiquidacao: plainData.dias_sem_liquidacao || 0,
+    periodicidadeDias: plainData.periodicidade_dias || 30,
+    carenciaDias: plainData.carencia_dias || 15,
+    porcentagemPrazoDecorrido: plainData.porcentagem_prazo_decorrido || 0,
+    porcentagemLiquidada: plainData.porcentagem_liquidada || 0,
+    temMarcoVencido: !!plainData.tem_marco_vencido,
+    periodicidadeTipo: plainData.periodicidade_tipo || 'explícita',
+    valorGlobal: plainData.valor_global_atual || plainData.valor_global_original || 0,
+    multaMaxPercentual: plainData.multa_max_percentual || 10,
+    multaRemissaoExterna: !!plainData.multa_remissao_externa,
+    temAncora: !!plainData.data_ordem_servico || !!plainData.data_assinatura,
   }
 
   const calc = calcularClassificacao(params)
 
   const payload = {
-    ...data,
+    ...plainData,
     status_classificacao: calc.status,
     gravidade_score: calc.gravidade,
     resumo_motivo_status: calc.motivo,
   }
 
-  if (data.id) {
-    return await pb.collection('obras').update<ObraRecord>(data.id, payload)
+  if (plainData.id) {
+    return await pb.collection('obras').update<ObraRecord>(plainData.id, payload)
   } else {
     return await pb.collection('obras').create<ObraRecord>(payload)
   }

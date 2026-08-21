@@ -95,6 +95,148 @@ export default function ObraDetail() {
     penalidade?: string
   } | null>(null)
 
+  // Modais de criação rápida (para o fiscal adicionar novos registros na tela)
+  const [modalNovaObrigacao, setModalNovaObrigacao] = useState(false)
+  const [formObrigacao, setFormObrigacao] = useState<Partial<ObrigacaoRecord>>({
+    clausula: '',
+    descricao: '',
+    responsavel: 'Contratada',
+    tipo_regua: 'marco_contratual',
+    prazo_texto: '',
+    data_limite: '',
+    penalidade_associada: '',
+    penalidade_percentual: 10,
+    status_cumprimento: 'no_prazo',
+    dias_atraso: 0,
+    confianca: 'alta',
+  })
+
+  const [modalNovoAditivo, setModalNovoAditivo] = useState(false)
+  const [formAditivo, setFormAditivo] = useState<Partial<AditivoRecord>>({
+    numero_termo: '',
+    tipo_aditivo: 'Valor (Acréscimo)',
+    data_assinatura: new Date().toISOString().split('T')[0],
+    justificativa: '',
+    valor_aditado: 0,
+    percentual_aditado_individual: 0,
+    prazo_aditado_dias: 0,
+    limite_legal_percentual: 25,
+  })
+
+  const [modalNovaLiquidacao, setModalNovaLiquidacao] = useState(false)
+  const [formLiquidacao, setFormLiquidacao] = useState<Partial<LiquidacaoRecord>>({
+    numero_medicao: '',
+    numero_nota_empenho: '',
+    data_liquidacao: new Date().toISOString().split('T')[0],
+    valor_liquidado: 0,
+    percentual_medido: 0,
+    status_tramitacao: 'Liquidado e Pago',
+    observacoes: '',
+  })
+
+  async function handleCriarObrigacao() {
+    if (!id || !formObrigacao.clausula || !formObrigacao.descricao) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha a cláusula e a descrição da obrigação.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      await createObrigacao({
+        ...formObrigacao,
+        obra_id: id,
+      })
+      toast({
+        title: 'Obrigação cadastrada',
+        description: 'Novo marco/obrigação registrado com sucesso.',
+      })
+      setModalNovaObrigacao(false)
+      setFormObrigacao({
+        clausula: '',
+        descricao: '',
+        responsavel: 'Contratada',
+        tipo_regua: 'marco_contratual',
+        prazo_texto: '',
+        data_limite: '',
+        penalidade_associada: '',
+        penalidade_percentual: 10,
+        status_cumprimento: 'no_prazo',
+        dias_atraso: 0,
+        confianca: 'alta',
+      })
+      loadAll(id)
+    } catch (e: any) {
+      toast({
+        title: 'Erro ao cadastrar',
+        description: e.message || 'Não foi possível salvar a obrigação.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  async function handleCriarAditivo() {
+    if (!id || !formAditivo.numero_termo || !formAditivo.justificativa) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha o número do termo e a justificativa.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      await createAditivo({
+        ...formAditivo,
+        obra_id: id,
+        alerta_limite_ultrapassado:
+          (formAditivo.percentual_aditado_individual || 0) >
+          (formAditivo.limite_legal_percentual || 25),
+      })
+      toast({
+        title: 'Termo Aditivo averbado',
+        description: 'Aditivo registrado com sucesso.',
+      })
+      setModalNovoAditivo(false)
+      loadAll(id)
+    } catch (e: any) {
+      toast({
+        title: 'Erro ao cadastrar',
+        description: e.message || 'Não foi possível salvar o aditivo.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  async function handleCriarLiquidacao() {
+    if (!id || !formLiquidacao.data_liquidacao || !formLiquidacao.valor_liquidado) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha a data e o valor liquidado.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      await createLiquidacao({
+        ...formLiquidacao,
+        obra_id: id,
+      })
+      toast({
+        title: 'Liquidação registrada',
+        description: 'Nova medição/liquidação contabilizada com sucesso.',
+      })
+      setModalNovaLiquidacao(false)
+      loadAll(id)
+    } catch (e: any) {
+      toast({
+        title: 'Erro ao cadastrar',
+        description: e.message || 'Não foi possível salvar a liquidação.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   useEffect(() => {
     if (id) {
       loadAll(id)
@@ -308,12 +450,21 @@ export default function ObraDetail() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Tabela Rastreável de Obrigações & Marcos
+                Tabela Rastreável de Obrigações & Marcos ({obrigacoes.length})
               </h3>
               <p className="text-xs text-slate-500">
                 Cada obrigação vinculada à sua cláusula original e penalidade contratual.
               </p>
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setModalNovaObrigacao(true)}
+              className="text-xs font-semibold"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Adicionar Obrigação
+            </Button>
           </div>
 
           {obrigacoes.length === 0 ? (
@@ -555,13 +706,22 @@ export default function ObraDetail() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Comparativo: Contrato Original vs. Termos Aditivos
+                Comparativo: Contrato Original vs. Termos Aditivos ({aditivos.length})
               </h3>
               <p className="text-xs text-slate-500">
                 Rastreamento cumulativo de acréscimos de valor e prazo em face dos limites da Lei
                 14.133/21.
               </p>
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setModalNovoAditivo(true)}
+              className="text-xs font-semibold"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Averbar Aditivo
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -655,13 +815,22 @@ export default function ObraDetail() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Rastro de Liquidações & Execução Orçamentária
+                Rastro de Liquidações & Execução Orçamentária ({liquidacoes.length})
               </h3>
               <p className="text-xs text-slate-500">
                 Sinais financeiros capturados dos sistemas de contabilidade municipal para verificar
                 o ritmo da obra.
               </p>
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setModalNovaLiquidacao(true)}
+              className="text-xs font-semibold"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Registrar Liquidação
+            </Button>
           </div>
 
           {liquidacoes.length === 0 ? (
@@ -884,6 +1053,368 @@ export default function ObraDetail() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Adicionar Nova Obrigação */}
+      <Dialog open={modalNovaObrigacao} onOpenChange={setModalNovaObrigacao}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <CheckSquare className="h-5 w-5 text-blue-600" />
+              Cadastrar Nova Obrigação / Marco Contratual
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Vincule um marco ou encargo temporal com penalidade moratória associada.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-xs">
+            <div>
+              <label className="font-bold block mb-1">Cláusula / Identificador *</label>
+              <Input
+                placeholder="Ex: Cláusula 3.2 - Entrega da Estrutura"
+                value={formObrigacao.clausula || ''}
+                onChange={(e) => setFormObrigacao({ ...formObrigacao, clausula: e.target.value })}
+                className="text-xs"
+              />
+            </div>
+            <div>
+              <label className="font-bold block mb-1">Descrição do Marco / Obrigação *</label>
+              <Textarea
+                placeholder="Ex: Conclusão e entrega da laje de cobertura..."
+                value={formObrigacao.descricao || ''}
+                onChange={(e) => setFormObrigacao({ ...formObrigacao, descricao: e.target.value })}
+                rows={2}
+                className="text-xs"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Responsável</label>
+                <Select
+                  value={formObrigacao.responsavel}
+                  onValueChange={(v: any) => setFormObrigacao({ ...formObrigacao, responsavel: v })}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Contratada">Contratada</SelectItem>
+                    <SelectItem value="Administração">Administração</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Tipo de Régua</label>
+                <Select
+                  value={formObrigacao.tipo_regua}
+                  onValueChange={(v: any) => setFormObrigacao({ ...formObrigacao, tipo_regua: v })}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="marco_contratual">Marco Contratual</SelectItem>
+                    <SelectItem value="liquidacao_medicao">Liquidação / Medição</SelectItem>
+                    <SelectItem value="administrativo">Administrativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Prazo Pactuado (Texto)</label>
+                <Input
+                  placeholder="Ex: 90 dias da OS"
+                  value={formObrigacao.prazo_texto || ''}
+                  onChange={(e) =>
+                    setFormObrigacao({ ...formObrigacao, prazo_texto: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Data Limite (Calendário)</label>
+                <Input
+                  type="date"
+                  value={formObrigacao.data_limite || ''}
+                  onChange={(e) =>
+                    setFormObrigacao({ ...formObrigacao, data_limite: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Penalidade Prevista</label>
+                <Input
+                  placeholder="Ex: Multa de 10% sobre saldo"
+                  value={formObrigacao.penalidade_associada || ''}
+                  onChange={(e) =>
+                    setFormObrigacao({ ...formObrigacao, penalidade_associada: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Status</label>
+                <Select
+                  value={formObrigacao.status_cumprimento}
+                  onValueChange={(v: any) =>
+                    setFormObrigacao({ ...formObrigacao, status_cumprimento: v })
+                  }
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no_prazo">No Prazo</SelectItem>
+                    <SelectItem value="vencido">Vencido</SelectItem>
+                    <SelectItem value="cumprido">Cumprido</SelectItem>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setModalNovaObrigacao(false)}>
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-700 hover:bg-blue-800 text-white font-bold"
+                onClick={handleCriarObrigacao}
+              >
+                Salvar Obrigação
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Adicionar Novo Aditivo */}
+      <Dialog open={modalNovoAditivo} onOpenChange={setModalNovoAditivo}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <Scale className="h-5 w-5 text-blue-600" />
+              Averbar Termo Aditivo ao Contrato
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Registre aditamento de valor ou prazo para auditoria de limite legal.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Número do Termo *</label>
+                <Input
+                  placeholder="Ex: 1º Termo Aditivo"
+                  value={formAditivo.numero_termo || ''}
+                  onChange={(e) => setFormAditivo({ ...formAditivo, numero_termo: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Tipo de Aditivo</label>
+                <Select
+                  value={formAditivo.tipo_aditivo}
+                  onValueChange={(v: any) => setFormAditivo({ ...formAditivo, tipo_aditivo: v })}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Valor (Acréscimo)">Valor (Acréscimo)</SelectItem>
+                    <SelectItem value="Valor (Supressão)">Valor (Supressão)</SelectItem>
+                    <SelectItem value="Prazo (Prorrogação)">Prazo (Prorrogação)</SelectItem>
+                    <SelectItem value="Misto (Prazo e Valor)">Misto (Prazo e Valor)</SelectItem>
+                    <SelectItem value="Qualitativo/Readequação">Qualitativo/Readequação</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <label className="font-bold block mb-1">Justificativa Legal *</label>
+              <Textarea
+                placeholder="Ex: Acréscimo de quantitativos e readequação de fundações..."
+                value={formAditivo.justificativa || ''}
+                onChange={(e) => setFormAditivo({ ...formAditivo, justificativa: e.target.value })}
+                rows={2}
+                className="text-xs"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Valor Aditado (R$)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formAditivo.valor_aditado || 0}
+                  onChange={(e) =>
+                    setFormAditivo({
+                      ...formAditivo,
+                      valor_aditado: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="text-xs font-mono"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">% Aditado Individual</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={formAditivo.percentual_aditado_individual || 0}
+                  onChange={(e) =>
+                    setFormAditivo({
+                      ...formAditivo,
+                      percentual_aditado_individual: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="text-xs font-mono"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Data Assinatura</label>
+                <Input
+                  type="date"
+                  value={formAditivo.data_assinatura || ''}
+                  onChange={(e) =>
+                    setFormAditivo({ ...formAditivo, data_assinatura: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setModalNovoAditivo(false)}>
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-700 hover:bg-blue-800 text-white font-bold"
+                onClick={handleCriarAditivo}
+              >
+                Gravar Aditivo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Adicionar Nova Liquidação */}
+      <Dialog open={modalNovaLiquidacao} onOpenChange={setModalNovaLiquidacao}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-emerald-600" />
+              Registrar Liquidação Financeira
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Lançamento contábil e orçamentário de medição da obra.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Número da Medição</label>
+                <Input
+                  placeholder="Ex: 3ª Medição"
+                  value={formLiquidacao.numero_medicao || ''}
+                  onChange={(e) =>
+                    setFormLiquidacao({ ...formLiquidacao, numero_medicao: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Nota de Empenho</label>
+                <Input
+                  placeholder="Ex: NE-2026/00451"
+                  value={formLiquidacao.numero_nota_empenho || ''}
+                  onChange={(e) =>
+                    setFormLiquidacao({ ...formLiquidacao, numero_nota_empenho: e.target.value })
+                  }
+                  className="text-xs font-mono"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Data da Liquidação *</label>
+                <Input
+                  type="date"
+                  value={formLiquidacao.data_liquidacao || ''}
+                  onChange={(e) =>
+                    setFormLiquidacao({ ...formLiquidacao, data_liquidacao: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Valor Liquidado (R$) *</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formLiquidacao.valor_liquidado || 0}
+                  onChange={(e) =>
+                    setFormLiquidacao({
+                      ...formLiquidacao,
+                      valor_liquidado: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="text-xs font-mono"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">% Medido</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={formLiquidacao.percentual_medido || 0}
+                  onChange={(e) =>
+                    setFormLiquidacao({
+                      ...formLiquidacao,
+                      percentual_medido: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="text-xs font-mono"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="font-bold block mb-1">Observações da Fiscalização</label>
+              <Textarea
+                placeholder="Ex: Medição física dos serviços de alvenaria e instalações elétricas..."
+                value={formLiquidacao.observacoes || ''}
+                onChange={(e) =>
+                  setFormLiquidacao({ ...formLiquidacao, observacoes: e.target.value })
+                }
+                rows={2}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setModalNovaLiquidacao(false)}>
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                onClick={handleCriarLiquidacao}
+              >
+                Salvar Liquidação
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
