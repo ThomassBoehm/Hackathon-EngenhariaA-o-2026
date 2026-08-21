@@ -1,18 +1,13 @@
 import React from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import {
-  Building2,
   LayoutDashboard,
-  FileText,
   UploadCloud,
   FileCheck2,
   Search,
   BarChart3,
-  PlusCircle,
   ShieldAlert,
   HelpCircle,
-  ExternalLink,
-  ChevronRight,
   Menu,
   X,
 } from 'lucide-react'
@@ -185,27 +180,6 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               </DialogContent>
             </Dialog>
-
-            <Link to="/upload">
-              <Button
-                size="sm"
-                className="bg-blue-700 hover:bg-blue-800 text-white font-medium shadow-sm flex items-center gap-1.5"
-              >
-                <UploadCloud className="h-4 w-4" />
-                <span className="hidden sm:inline">Upload Contrato</span>
-              </Button>
-            </Link>
-
-            <Link to="/obras/nova">
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-slate-300 dark:border-slate-700 font-medium flex items-center gap-1.5"
-              >
-                <PlusCircle className="h-4 w-4 text-blue-600" />
-                <span className="hidden sm:inline">Cadastrar Obra</span>
-              </Button>
-            </Link>
           </div>
         </div>
 
