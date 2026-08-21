@@ -225,14 +225,6 @@ export default function Layout({ children }: LayoutProps) {
               Painel de Fiscalização Ativo — Hackathon Cidades Inteligentes SP 2026
             </span>
           </div>
-          <div className="flex items-center gap-4 text-blue-200">
-            <span>
-              Fiscal: <strong>Gilberson Machado (SEHAB/SMS/SME)</strong>
-            </span>
-            <span className="hidden sm:inline">
-              Carência Padrão: <strong>15 dias</strong>
-            </span>
-          </div>
         </div>
       </div>
 
