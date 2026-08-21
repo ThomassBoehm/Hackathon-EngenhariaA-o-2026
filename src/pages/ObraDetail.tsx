@@ -362,7 +362,7 @@ export default function ObraDetail() {
           </TabsTrigger>
           <TabsTrigger value="liquidacoes" className="text-xs py-2 font-semibold">
             <DollarSign className="h-3.5 w-3.5 mr-1.5" />
-            Medições & Liquidações ({liquidacoes.length})
+            Liquidações Financeiras ({liquidacoes.length})
           </TabsTrigger>
           <TabsTrigger value="contrato_ia" className="text-xs py-2 font-semibold">
             <Sparkles className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
@@ -717,7 +717,7 @@ export default function ObraDetail() {
           )}
         </TabsContent>
 
-        {/* TAB 4: Medições e Liquidações Orçamentárias */}
+        {/* TAB 4: Liquidações Financeiras Orçamentárias */}
         <TabsContent value="liquidacoes" className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <div>
@@ -734,7 +734,7 @@ export default function ObraDetail() {
           {liquidacoes.length === 0 ? (
             <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300">
               <p className="text-xs text-slate-500">
-                Nenhuma medição liquidada registrada para esta obra até o momento.
+                Nenhuma liquidação registrada para esta obra até o momento.
               </p>
             </div>
           ) : (
@@ -742,10 +742,9 @@ export default function ObraDetail() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold text-[10px]">
                   <tr>
-                    <th className="p-3.5">Medição / Empenho</th>
+                    <th className="p-3.5">Nota de Empenho</th>
                     <th className="p-3.5">Data da Liquidação</th>
                     <th className="p-3.5">Valor Liquidado</th>
-                    <th className="p-3.5">Avanço Medido</th>
                     <th className="p-3.5">Situação</th>
                     <th className="p-3.5">Observações da Fiscalização</th>
                   </tr>
@@ -753,22 +752,14 @@ export default function ObraDetail() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {liquidacoes.map((l) => (
                     <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="p-3.5">
-                        <div className="font-bold text-slate-900 dark:text-white font-mono">
-                          {l.numero_medicao || 'Medição'}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          {l.numero_nota_empenho || ''}
-                        </div>
+                      <td className="p-3.5 font-bold text-slate-900 dark:text-white font-mono">
+                        {l.numero_nota_empenho || '—'}
                       </td>
                       <td className="p-3.5 text-slate-700 dark:text-slate-300">
                         {formatarData(l.data_liquidacao)}
                       </td>
                       <td className="p-3.5 font-mono font-bold text-emerald-700 dark:text-emerald-400">
                         {formatarMoeda(l.valor_liquidado)}
-                      </td>
-                      <td className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">
-                        {l.percentual_medido ? `${l.percentual_medido}%` : '—'}
                       </td>
                       <td className="p-3.5">
                         <Badge
