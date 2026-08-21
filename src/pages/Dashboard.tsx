@@ -760,58 +760,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
-      {/* Seção dos 3 Contratos Reais da Validação do Hackathon */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-blue-950/40 border border-blue-200 dark:border-blue-900">
-        <div className="flex items-center gap-2 mb-2">
-          <Building2 className="h-5 w-5 text-blue-700" />
-          <h3 className="text-base font-bold text-blue-950 dark:text-blue-200">
-            Contratos Analisados e Validados na Documentação Oficial
-          </h3>
-        </div>
-        <p className="text-xs text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
-          Evidência empírica documentada no PDF: Os 3 contratos reais apresentaram inconsistências e
-          comportamentos distintos de réguas contratuais.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
-            <span className="font-bold text-red-600 block mb-1">
-              041/2026 · São Pedro do Turvo/SP
-            </span>
-            <span className="text-slate-600 dark:text-slate-400 block">
-              R$ 2.734.800,00 · Obra Habitacional
-            </span>
-            <span className="text-slate-500 text-[11px] mt-1 block">
-              Escada completa de penalidade, 47d atraso, marco vencido, aditivo incompatível de 50%.
-            </span>
-          </div>
-
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
-            <span className="font-bold text-amber-600 block mb-1">133/2026 · Pontal/SP</span>
-            <span className="text-slate-600 dark:text-slate-400 block">
-              R$ 469.470,00 · Serviço Continuado
-            </span>
-            <span className="text-slate-500 text-[11px] mt-1 block">
-              Periodicidade inferida (12x MÊS), S = 1.0 (remetido ao TR), divergência extenso 12
-              (dez).
-            </span>
-          </div>
-
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
-            <span className="font-bold text-slate-600 dark:text-slate-300 block mb-1">
-              2-DLE-086-2026 · Teixeira de Freitas/BA
-            </span>
-            <span className="text-slate-600 dark:text-slate-400 block">
-              R$ 19.683,44 · Aquisição / Saneamento
-            </span>
-            <span className="text-slate-500 text-[11px] mt-1 block">
-              Entrega única, periodicidade ausente, sinalizado sem imputação determinística no
-              ranking.
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
