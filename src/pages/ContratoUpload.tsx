@@ -78,36 +78,61 @@ CLÁUSULA QUINTA - DA MULTA: Multa de 15% (quinze por cento) em caso de descumpr
   const [isReadingFile, setIsReadingFile] = useState(false)
   const [fileWarning, setFileWarning] = useState<string | null>(null)
 
-  const extrairTextoDeArquivo = async (uploadedFile: File): Promise<string> => {
+  const extrairTextoDePdf = async (uploadedFile: File): Promise<string> => {
     try {
-      // Tenta ler como texto via file.text() ou FileReader
+      const pdfjsLib = await import('pdfjs-dist')
+      // Configura worker do pdf.js para ambiente browser/bundler
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/build/pdf.worker.min.mjs`
+      }
+
+      const arrayBuffer = await uploadedFile.arrayBuffer()
+      const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(arrayBuffer),
+        useWorkerFetch: true,
+        isEvalSupported: false,
+        useSystemFonts: true,
+      })
+
+      const pdfDocument = await loadingTask.promise
+      const numPages = pdfDocument.numPages
+      const paginasTexto: string[] = []
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum)
+        const textContent = await page.getTextContent()
+
+        // Concatena os itens de texto da página respeitando quebras e espaços
+        const pageItems = textContent.items
+          .map((item) => ('str' in item ? item.str : ''))
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+
+        if (pageItems) {
+          paginasTexto.push(`--- PÁGINA ${pageNum} ---\n${pageItems}`)
+        }
+      }
+
+      return paginasTexto.join('\n\n').trim()
+    } catch (err) {
+      console.error('Erro ao extrair texto do PDF via pdf.js:', err)
+      return ''
+    }
+  }
+
+  const extrairTextoDeArquivo = async (uploadedFile: File): Promise<string> => {
+    const isPdf =
+      uploadedFile.type === 'application/pdf' || uploadedFile.name.toLowerCase().endsWith('.pdf')
+
+    if (isPdf) {
+      return await extrairTextoDePdf(uploadedFile)
+    }
+
+    // Para arquivos de texto simples ou outros formatos (.txt, .doc, etc.), usa file.text()
+    try {
       const rawText = await uploadedFile.text()
-
-      // Se for um arquivo de texto/markdown/etc simples
-      if (uploadedFile.type === 'text/plain' || uploadedFile.name.endsWith('.txt')) {
-        return rawText
-      }
-
-      // Para arquivos PDF / binários:
-      // O PDF possui streams e metadados binários. Tentamos extrair blocos de texto legíveis.
-      // Procuramos padrões de texto comuns em PDFs (streams / parênteses de texto / linhas legíveis com caracteres ASCII/Latin).
-      const cleaned = rawText
-        .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, ' ') // mantém caracteres imprimíveis e acentos
-        .replace(/\s+/g, ' ') // normaliza espaços
-        .trim()
-
-      // Filtra trechos significativos de palavras (mínimo de letras seguidas)
-      const words = cleaned
-        .split(' ')
-        .filter((w) => w.length > 1 && /[a-zA-ZáéíóúÁÉÍÓÚçÇãõÃÕâêîôûÂÊÎÔÛ]/.test(w))
-      const legibleText = words.join(' ')
-
-      // Avalia se o texto extraído é suficientemente inteligível
-      if (legibleText.length < 50 || words.length < 10) {
-        return ''
-      }
-
-      return legibleText
+      return rawText.trim()
     } catch (err) {
       console.warn('Erro ao ler arquivo como texto:', err)
       return ''
@@ -128,14 +153,14 @@ CLÁUSULA QUINTA - DA MULTA: Multa de 15% (quinze por cento) em caso de descumpr
       if (textoExtraido && textoExtraido.trim().length >= 50) {
         setTextoManual(textoExtraido)
         setFileWarning(
-          'Texto extraído do arquivo. Como não há OCR nativo de PDF no navegador, revise ou complete o texto abaixo antes de iniciar a extração de IA se necessário.',
+          'Texto extraído com sucesso do documento. Revise ou complete o texto no editor abaixo antes de submeter à IA se necessário.',
         )
         toast({
           title: 'Arquivo carregado!',
-          description: `Conteúdo extraído de "${selectedFile.name}" inserido no editor para análise.`,
+          description: `Conteúdo de "${selectedFile.name}" extraído e inserido no editor para análise.`,
         })
       } else {
-        // PDF binário não parseável diretamente via file.text()
+        // PDF digitalizado/escaneado sem camada de texto selecionável ou arquivo vazio
         const placeholderContrato = `TERMO DE CONTRATO EXTRAÍDO DE ${selectedFile.name.toUpperCase()}
 PROCESSO ADMINISTRATIVO: PA-001/2026
 CLÁUSULA PRIMEIRA - DO OBJETO: Execução de obra/serviço conforme especificações do arquivo ${selectedFile.name}.
@@ -146,12 +171,12 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
 
         setTextoManual(placeholderContrato)
         setFileWarning(
-          `O arquivo "${selectedFile.name}" é um PDF binário ou digitalizado. Um modelo de texto editável com o nome do arquivo foi pré-configurado. Você pode colar o texto completo ou editar as cláusulas diretamente no campo abaixo antes de extrair.`,
+          `O arquivo "${selectedFile.name}" não possui camada de texto selecionável (pode ser um PDF escaneado/digitalizado). Um modelo de texto editável com o nome do arquivo foi pré-configurado. Você pode colar o texto completo ou editar as cláusulas diretamente no campo abaixo antes de extrair.`,
         )
         toast({
           title: 'Aviso de leitura de PDF',
           description:
-            'Texto do PDF extraído em modo raw/editável. Você pode ajustar as cláusulas no editor.',
+            'Nenhum texto selecionável detectado no PDF. Template editável carregado no editor.',
         })
       }
     } catch (err) {
