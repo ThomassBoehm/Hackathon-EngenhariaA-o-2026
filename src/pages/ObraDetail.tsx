@@ -440,7 +440,7 @@ export default function ObraDetail() {
 
       {/* Tabs com os Detalhes da Auditoria */}
       <Tabs defaultValue="obrigacoes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-slate-100 dark:bg-slate-800">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto p-1 bg-slate-100 dark:bg-slate-800">
           <TabsTrigger value="obrigacoes" className="text-xs py-2 font-semibold">
             <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
             O que o contrato promete ({obrigacoes.length})
@@ -451,10 +451,6 @@ export default function ObraDetail() {
             {inconsistencias.length > 0 && (
               <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-2" />
             )}
-          </TabsTrigger>
-          <TabsTrigger value="aditivos" className="text-xs py-2 font-semibold">
-            <Scale className="h-3.5 w-3.5 mr-1.5" />
-            Mudanças no contrato ({aditivos.length})
           </TabsTrigger>
           <TabsTrigger value="liquidacoes" className="text-xs py-2 font-semibold">
             <DollarSign className="h-3.5 w-3.5 mr-1.5" />
@@ -713,114 +709,6 @@ export default function ObraDetail() {
                   </Card>
                 )
               })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* TAB 3: Comparativo de Aditivos (Original vs Atual) */}
-        <TabsContent value="aditivos" className="space-y-4 pt-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Mudanças no contrato ({aditivos.length})
-              </h3>
-              <p className="text-xs text-slate-500">
-                Acompanhamento de acréscimos de valor e prazo, conforme limites da Lei 14.133/21.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setModalNovoAditivo(true)}
-              className="text-xs font-semibold"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Adicionar mudança
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs font-bold uppercase">
-                  Valor Global Original
-                </CardDescription>
-                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200">
-                  {formatarMoeda(obra.valor_global_original)}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs font-bold uppercase">
-                  Valor atual com mudanças
-                </CardDescription>
-                <CardTitle className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                  {formatarMoeda(obra.valor_global_atual || obra.valor_global_original)}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs font-bold uppercase">
-                  Acréscimo acumulado
-                </CardDescription>
-                <CardTitle className="text-xl font-bold text-amber-700 dark:text-amber-400">
-                  +{obra.percentual_aditado_total || 0}% / Limite:{' '}
-                  {obra.limite_aditivo_percentual || 25}%
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
-
-          {aditivos.length === 0 ? (
-            <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300">
-              <p className="text-xs text-slate-500">
-                Nenhuma mudança registrada até o momento. Contrato opera com valor original.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold text-[10px]">
-                  <tr>
-                    <th className="p-3.5">Mudança</th>
-                    <th className="p-3.5">Tipo</th>
-                    <th className="p-3.5">Data assinatura</th>
-                    <th className="p-3.5">Valor alterado</th>
-                    <th className="p-3.5">Impacto %</th>
-                    <th className="p-3.5">Justificativa</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {aditivos.map((ad) => (
-                    <tr key={ad.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="p-3.5 font-bold font-mono text-slate-900 dark:text-white">
-                        {ad.numero_termo}
-                      </td>
-                      <td className="p-3.5">
-                        <Badge variant="outline" className="text-[10px]">
-                          {ad.tipo_aditivo}
-                        </Badge>
-                      </td>
-                      <td className="p-3.5 text-slate-600 dark:text-slate-400">
-                        {formatarData(ad.data_assinatura)}
-                      </td>
-                      <td className="p-3.5 font-mono font-bold text-blue-700 dark:text-blue-300">
-                        +{formatarMoeda(ad.valor_aditado)}
-                      </td>
-                      <td className="p-3.5 font-bold text-amber-700">
-                        +{ad.percentual_aditado_individual || 0}%
-                      </td>
-                      <td className="p-3.5 text-slate-600 dark:text-slate-300 max-w-xs line-clamp-2">
-                        {ad.justificativa || '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           )}
         </TabsContent>
