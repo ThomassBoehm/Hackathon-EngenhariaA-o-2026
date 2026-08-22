@@ -140,8 +140,8 @@ export default function BuscaAvancada() {
           Busca Avançada & Filtros Combinados de Auditoria
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Cruze múltiplos parâmetros contratuais, faixas orçamentárias, ocorrência de aditivos e
-          inconsistências de texto.
+          Cruze múltiplos parâmetros contratuais, faixas orçamentárias, ocorrência de mudanças e
+          problemas no texto.
         </p>
       </div>
 
@@ -240,7 +240,7 @@ export default function BuscaAvancada() {
 
             <div>
               <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                Inconsistências de Texto
+                Problemas no texto
               </label>
               <Select value={temInconsistencia} onValueChange={setTemInconsistencia}>
                 <SelectTrigger className="h-8 text-xs">
@@ -248,8 +248,8 @@ export default function BuscaAvancada() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todas</SelectItem>
-                  <SelectItem value="sim">Com Inconsistência Detectada</SelectItem>
-                  <SelectItem value="nao">Sem Inconsistências</SelectItem>
+                  <SelectItem value="sim">Com problemas</SelectItem>
+                  <SelectItem value="nao">Sem problemas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -272,7 +272,7 @@ export default function BuscaAvancada() {
 
             <div>
               <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                Acréscimos / Aditivos
+                Mudanças no contrato
               </label>
               <Select value={temAditivos} onValueChange={setTemAditivos}>
                 <SelectTrigger className="h-8 text-xs">
@@ -280,8 +280,8 @@ export default function BuscaAvancada() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="sim">Com Termos Aditivos</SelectItem>
-                  <SelectItem value="nao">Sem Aditivos</SelectItem>
+                  <SelectItem value="sim">Com mudanças</SelectItem>
+                  <SelectItem value="nao">Sem mudanças</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -358,7 +358,7 @@ export default function BuscaAvancada() {
                           variant="outline"
                           className="text-[10px] text-amber-800 border-amber-300 bg-amber-50"
                         >
-                          Inconsistência Texto
+                          Problemas no texto
                         </Badge>
                       )}
                     </div>
@@ -398,7 +398,7 @@ export default function BuscaAvancada() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                        Gravidade (G)
+                        Nível de atenção
                       </span>
                       <span className="text-lg font-black text-slate-800 dark:text-slate-200">
                         {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '—'}
@@ -409,7 +409,7 @@ export default function BuscaAvancada() {
                         size="sm"
                         className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold"
                       >
-                        Ver Apontamentos
+                        Ver detalhes
                         <ArrowRight className="h-3.5 w-3.5 ml-1" />
                       </Button>
                     </Link>

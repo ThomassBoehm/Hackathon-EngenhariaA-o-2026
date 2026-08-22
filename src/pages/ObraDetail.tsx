@@ -360,11 +360,11 @@ export default function ObraDetail() {
                 <span className={`w-2 h-2 rounded-full ${badgeInfo.dot}`} />
                 {badgeInfo.label}
               </span>
-              <span className="text-xs text-slate-500">Auditoria determinística atualizada</span>
+              <span className="text-xs text-slate-500">Resultado da análise atualizado</span>
             </div>
 
             <CardTitle className="text-lg font-bold text-slate-900 dark:text-white pt-2">
-              Apontamento do Fiscal: O que o SIGO detectou
+              Alerta do sistema: O que o SIGO detectou
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-xs">
@@ -375,12 +375,12 @@ export default function ObraDetail() {
                 <div>
                   <h4 className="font-bold text-sm text-white mb-1">
                     {obra.status_classificacao === 'prazo_vencido'
-                      ? 'Situação Passível de Apuração / Abertura de Processo'
+                      ? 'Situação que pode exigir abertura de processo'
                       : obra.status_classificacao === 'fora_do_ritmo'
-                        ? 'Alerta Prévio de Descompasso Físico-Financeiro'
+                        ? 'Alerta de atraso no ritmo da obra'
                         : obra.status_classificacao === 'no_ritmo'
-                          ? 'Execução em Conformidade Pactuada'
-                          : 'Contrato Sinalizado para Validação de Réguas'}
+                          ? 'Execução dentro do combinado'
+                          : 'Contrato sinalizado para validar regras do contrato'}
                   </h4>
                   <p className="text-slate-300 leading-relaxed">
                     {obra.resumo_motivo_status ||
@@ -394,21 +394,21 @@ export default function ObraDetail() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-900">
                 <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block mb-1">
-                  1. Régua de Marco Contratual (Contratada)
+                  1. Entregas da empresa (Contratada)
                 </span>
                 <p className="text-slate-700 dark:text-slate-300 leading-tight">
                   {obra.tem_marco_vencido
-                    ? 'Há obrigações de entrega vencidas sem carência.'
-                    : 'Marcos contratuais datados cumpridos ou no prazo.'}
+                    ? 'Há entregas atrasadas sem carência.'
+                    : 'Entregas datadas cumpridas ou no prazo.'}
                 </p>
               </div>
 
               <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 block mb-1">
-                  2. Régua de Liquidação (Administração)
+                  2. Liquidações (Administração)
                 </span>
                 <p className="text-slate-600 dark:text-slate-400 leading-tight">
-                  {obra.dias_sem_liquidacao || 0} dias de silêncio contábil. Carência de trâmite de{' '}
+                  {obra.dias_sem_liquidacao || 0} dias sem pagamento. Carência de trâmite de{' '}
                   {obra.carencia_dias || 15} dias aplicada.
                 </p>
               </div>
@@ -422,18 +422,18 @@ export default function ObraDetail() {
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto p-1 bg-slate-100 dark:bg-slate-800">
           <TabsTrigger value="obrigacoes" className="text-xs py-2 font-semibold">
             <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
-            Obrigações & Marcos ({obrigacoes.length})
+            O que o contrato promete ({obrigacoes.length})
           </TabsTrigger>
           <TabsTrigger value="inconsistencias" className="text-xs py-2 font-semibold relative">
             <AlertTriangle className="h-3.5 w-3.5 mr-1.5 text-amber-600" />
-            Inconsistências ({inconsistencias.length})
+            Problemas encontrados ({inconsistencias.length})
             {inconsistencias.length > 0 && (
               <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-2" />
             )}
           </TabsTrigger>
           <TabsTrigger value="aditivos" className="text-xs py-2 font-semibold">
             <Scale className="h-3.5 w-3.5 mr-1.5" />
-            Comparativo Aditivos ({aditivos.length})
+            Mudanças no contrato ({aditivos.length})
           </TabsTrigger>
           <TabsTrigger value="liquidacoes" className="text-xs py-2 font-semibold">
             <DollarSign className="h-3.5 w-3.5 mr-1.5" />
@@ -441,7 +441,7 @@ export default function ObraDetail() {
           </TabsTrigger>
           <TabsTrigger value="contrato_ia" className="text-xs py-2 font-semibold">
             <Sparkles className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
-            Extração IA & Réguas
+            Dados extraídos do contrato
           </TabsTrigger>
         </TabsList>
 
@@ -450,10 +450,10 @@ export default function ObraDetail() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Tabela Rastreável de Obrigações & Marcos ({obrigacoes.length})
+                O que o contrato promete ({obrigacoes.length})
               </h3>
               <p className="text-xs text-slate-500">
-                Cada obrigação vinculada à sua cláusula original e penalidade contratual.
+                Cada item vinculado à cláusula original e à multa prevista no contrato.
               </p>
             </div>
             <Button
@@ -463,15 +463,13 @@ export default function ObraDetail() {
               className="text-xs font-semibold"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
-              Adicionar Obrigação
+              Adicionar item
             </Button>
           </div>
 
           {obrigacoes.length === 0 ? (
             <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300">
-              <p className="text-xs text-slate-500">
-                Nenhuma obrigação individual cadastrada ainda.
-              </p>
+              <p className="text-xs text-slate-500">Nenhum item cadastrado ainda.</p>
             </div>
           ) : (
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
@@ -481,9 +479,9 @@ export default function ObraDetail() {
                     <tr>
                       <th className="p-3.5">Cláusula & Descrição</th>
                       <th className="p-3.5">Responsável</th>
-                      <th className="p-3.5">Tipo de Régua</th>
-                      <th className="p-3.5">Prazo Pactuado</th>
-                      <th className="p-3.5">Penalidade Prevista</th>
+                      <th className="p-3.5">Regras do contrato</th>
+                      <th className="p-3.5">Prazo combinado</th>
+                      <th className="p-3.5">Multa prevista</th>
                       <th className="p-3.5">Status</th>
                       <th className="p-3.5 text-right">Ação</th>
                     </tr>
@@ -583,11 +581,11 @@ export default function ObraDetail() {
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
-                Painel de Inconsistências de Coerência Textual (Sem IA)
+                Problemas no texto
               </h3>
               <p className="text-xs text-slate-500">
-                4 checagens determinísticas: Cláusula inexistente, extenso divergente, divergência
-                aritmética e identificador conflitante.
+                4 verificações automáticas: cláusula inexistente, número por extenso divergente,
+                conta errada e identificador conflitante.
               </p>
             </div>
           </div>
@@ -596,10 +594,10 @@ export default function ObraDetail() {
             <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-emerald-300">
               <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto mb-2" />
               <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                Nenhuma inconsistência detectada
+                Sem problemas
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                O instrumento contratual passou com 100% de conformidade nas 4 checagens.
+                O contrato passou nas 4 verificações sem problemas.
               </p>
             </div>
           ) : (
@@ -690,7 +688,7 @@ export default function ObraDetail() {
                             )
                           }}
                         >
-                          {inc.parecer_fiscal ? 'Editar Parecer do Fiscal' : 'Validar Apontamento'}
+                          {inc.parecer_fiscal ? 'Editar parecer' : 'Ver detalhes'}
                         </Button>
                       </div>
                     </CardContent>
@@ -706,11 +704,10 @@ export default function ObraDetail() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Comparativo: Contrato Original vs. Termos Aditivos ({aditivos.length})
+                Mudanças no contrato ({aditivos.length})
               </h3>
               <p className="text-xs text-slate-500">
-                Rastreamento cumulativo de acréscimos de valor e prazo em face dos limites da Lei
-                14.133/21.
+                Acompanhamento de acréscimos de valor e prazo, conforme limites da Lei 14.133/21.
               </p>
             </div>
             <Button
@@ -720,7 +717,7 @@ export default function ObraDetail() {
               className="text-xs font-semibold"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
-              Averbar Aditivo
+              Adicionar mudança
             </Button>
           </div>
 
@@ -739,7 +736,7 @@ export default function ObraDetail() {
             <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
               <CardHeader className="pb-2">
                 <CardDescription className="text-xs font-bold uppercase">
-                  Valor Atual com Aditivos
+                  Valor atual com mudanças
                 </CardDescription>
                 <CardTitle className="text-xl font-bold text-blue-700 dark:text-blue-300">
                   {formatarMoeda(obra.valor_global_atual || obra.valor_global_original)}
@@ -750,7 +747,7 @@ export default function ObraDetail() {
             <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
               <CardHeader className="pb-2">
                 <CardDescription className="text-xs font-bold uppercase">
-                  Acréscimo Cumulativo
+                  Acréscimo acumulado
                 </CardDescription>
                 <CardTitle className="text-xl font-bold text-amber-700 dark:text-amber-400">
                   +{obra.percentual_aditado_total || 0}% / Limite:{' '}
@@ -763,7 +760,7 @@ export default function ObraDetail() {
           {aditivos.length === 0 ? (
             <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300">
               <p className="text-xs text-slate-500">
-                Nenhum termo aditivo averbado até o momento. Contrato opera com valor original.
+                Nenhuma mudança registrada até o momento. Contrato opera com valor original.
               </p>
             </div>
           ) : (
@@ -771,12 +768,12 @@ export default function ObraDetail() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold text-[10px]">
                   <tr>
-                    <th className="p-3.5">Termo Aditivo</th>
+                    <th className="p-3.5">Mudança</th>
                     <th className="p-3.5">Tipo</th>
-                    <th className="p-3.5">Data Assinatura</th>
-                    <th className="p-3.5">Valor Aditado</th>
+                    <th className="p-3.5">Data assinatura</th>
+                    <th className="p-3.5">Valor alterado</th>
                     <th className="p-3.5">Impacto %</th>
-                    <th className="p-3.5">Justificativa Legal</th>
+                    <th className="p-3.5">Justificativa</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -888,13 +885,11 @@ export default function ObraDetail() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-base font-bold">
-                  Metadados da Extração com IA (Skip AI Auditor)
-                </CardTitle>
+                <CardTitle className="text-base font-bold">Dados extraídos do contrato</CardTitle>
               </div>
               <CardDescription className="text-xs">
-                "Não treinamos modelo. Usamos modelo de linguagem apenas para converter texto
-                jurídico em campos estruturados."
+                Usamos um modelo de linguagem apenas para converter o texto jurídico em campos
+                preenchidos.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-xs">
@@ -957,7 +952,7 @@ export default function ObraDetail() {
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
-              Validar Inconsistência / Parecer do Fiscal
+              Ver detalhes / Parecer do fiscal
             </DialogTitle>
             <DialogDescription className="text-xs">
               O sistema observa; quem conclui é o agente público.
@@ -985,10 +980,10 @@ export default function ObraDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="confirmado_fiscal">
-                      Confirmar Inconsistência (Registrar para Saneamento)
+                      Confirmar problema (Registrar para correção)
                     </SelectItem>
                     <SelectItem value="desconsiderado">
-                      Desconsiderar (Justificado por Documento Apenso)
+                      Desconsiderar (justificado por documento anexo)
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -996,10 +991,10 @@ export default function ObraDetail() {
 
               <div>
                 <label className="font-bold block mb-1 text-slate-700 dark:text-slate-300">
-                  Parecer Técnico / Justificativa do Fiscal:
+                  Parecer / Justificativa do fiscal:
                 </label>
                 <Textarea
-                  placeholder="Ex: Apontamento procedente. Notificada a contratada para retificação em termo de aditamento..."
+                  placeholder="Ex: Alerta procedente. Contratada notificada para correção..."
                   value={parecerTexto}
                   onChange={(e) => setParecerTexto(e.target.value)}
                   rows={4}
@@ -1016,7 +1011,7 @@ export default function ObraDetail() {
                   className="bg-blue-700 hover:bg-blue-800 text-white font-bold"
                   onClick={handleSalvarParecer}
                 >
-                  Gravar Parecer Oficial
+                  Salvar parecer
                 </Button>
               </div>
             </div>
@@ -1062,10 +1057,10 @@ export default function ObraDetail() {
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               <CheckSquare className="h-5 w-5 text-blue-600" />
-              Cadastrar Nova Obrigação / Marco Contratual
+              Adicionar item do contrato
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Vincule um marco ou encargo temporal com penalidade moratória associada.
+              Cadastre uma entrega ou obrigação com a multa prevista no contrato.
             </DialogDescription>
           </DialogHeader>
 
@@ -1080,7 +1075,7 @@ export default function ObraDetail() {
               />
             </div>
             <div>
-              <label className="font-bold block mb-1">Descrição do Marco / Obrigação *</label>
+              <label className="font-bold block mb-1">Descrição da entrega / obrigação *</label>
               <Textarea
                 placeholder="Ex: Conclusão e entrega da laje de cobertura..."
                 value={formObrigacao.descricao || ''}
@@ -1106,7 +1101,7 @@ export default function ObraDetail() {
                 </Select>
               </div>
               <div>
-                <label className="font-bold block mb-1">Tipo de Régua</label>
+                <label className="font-bold block mb-1">Regras do contrato</label>
                 <Select
                   value={formObrigacao.tipo_regua}
                   onValueChange={(v: any) => setFormObrigacao({ ...formObrigacao, tipo_regua: v })}
@@ -1124,7 +1119,7 @@ export default function ObraDetail() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold block mb-1">Prazo Pactuado (Texto)</label>
+                <label className="font-bold block mb-1">Prazo combinado (texto)</label>
                 <Input
                   placeholder="Ex: 90 dias da OS"
                   value={formObrigacao.prazo_texto || ''}
@@ -1135,7 +1130,7 @@ export default function ObraDetail() {
                 />
               </div>
               <div>
-                <label className="font-bold block mb-1">Data Limite (Calendário)</label>
+                <label className="font-bold block mb-1">Data limite (calendário)</label>
                 <Input
                   type="date"
                   value={formObrigacao.data_limite || ''}
@@ -1148,7 +1143,7 @@ export default function ObraDetail() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold block mb-1">Penalidade Prevista</label>
+                <label className="font-bold block mb-1">Multa prevista</label>
                 <Input
                   placeholder="Ex: Multa de 10% sobre saldo"
                   value={formObrigacao.penalidade_associada || ''}
@@ -1188,7 +1183,7 @@ export default function ObraDetail() {
                 className="bg-blue-700 hover:bg-blue-800 text-white font-bold"
                 onClick={handleCriarObrigacao}
               >
-                Salvar Obrigação
+                Salvar item
               </Button>
             </div>
           </div>
@@ -1201,26 +1196,26 @@ export default function ObraDetail() {
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               <Scale className="h-5 w-5 text-blue-600" />
-              Averbar Termo Aditivo ao Contrato
+              Adicionar mudança ao contrato
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Registre aditamento de valor ou prazo para auditoria de limite legal.
+              Registre mudança de valor ou prazo para verificar o limite legal.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold block mb-1">Número do Termo *</label>
+                <label className="font-bold block mb-1">Número da mudança *</label>
                 <Input
-                  placeholder="Ex: 1º Termo Aditivo"
+                  placeholder="Ex: 1ª mudança"
                   value={formAditivo.numero_termo || ''}
                   onChange={(e) => setFormAditivo({ ...formAditivo, numero_termo: e.target.value })}
                   className="text-xs"
                 />
               </div>
               <div>
-                <label className="font-bold block mb-1">Tipo de Aditivo</label>
+                <label className="font-bold block mb-1">Tipo de mudança</label>
                 <Select
                   value={formAditivo.tipo_aditivo}
                   onValueChange={(v: any) => setFormAditivo({ ...formAditivo, tipo_aditivo: v })}
@@ -1239,7 +1234,7 @@ export default function ObraDetail() {
               </div>
             </div>
             <div>
-              <label className="font-bold block mb-1">Justificativa Legal *</label>
+              <label className="font-bold block mb-1">Justificativa *</label>
               <Textarea
                 placeholder="Ex: Acréscimo de quantitativos e readequação de fundações..."
                 value={formAditivo.justificativa || ''}
@@ -1250,7 +1245,7 @@ export default function ObraDetail() {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="font-bold block mb-1">Valor Aditado (R$)</label>
+                <label className="font-bold block mb-1">Valor alterado (R$)</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1265,7 +1260,7 @@ export default function ObraDetail() {
                 />
               </div>
               <div>
-                <label className="font-bold block mb-1">% Aditado Individual</label>
+                <label className="font-bold block mb-1">% alterado (individual)</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -1301,7 +1296,7 @@ export default function ObraDetail() {
                 className="bg-blue-700 hover:bg-blue-800 text-white font-bold"
                 onClick={handleCriarAditivo}
               >
-                Gravar Aditivo
+                Salvar mudança
               </Button>
             </div>
           </div>

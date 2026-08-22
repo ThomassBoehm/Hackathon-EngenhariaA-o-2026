@@ -75,13 +75,13 @@ export default function ClassificacaoPage() {
       <div className="space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-800">
           <ShieldAlert className="h-3.5 w-3.5 text-blue-600" />
-          Régua de Classificação & Fórmula de Gravidade
+          Classificação da obra & nível de atenção
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-          Motor Determinístico de Gravidade (G)
+          Como calculamos o alerta
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-3xl leading-relaxed">
-          O estado define a cor do alerta. A gravidade ordena a fila dentro de cada estado:{' '}
+          O estado define a cor. O nível de atenção ordena a lista dentro de cada estado:{' '}
           <code className="font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded">
             G = A × log₁₀(V) × S
           </code>
@@ -97,11 +97,10 @@ export default function ClassificacaoPage() {
             <div>
               <CardTitle className="text-base font-bold text-blue-200 flex items-center gap-2">
                 <Calculator className="h-5 w-5 text-blue-400" />
-                Simulador Interativo da Fórmula do Hackathon
+                Simulador do nível de atenção
               </CardTitle>
               <CardDescription className="text-xs text-slate-400">
-                Altere os parâmetros abaixo e veja a resposta da gravidade e classificação
-                determinística em tempo real.
+                Altere os parâmetros e veja como o alerta muda em tempo real.
               </CardDescription>
             </div>
 
@@ -114,7 +113,7 @@ export default function ClassificacaoPage() {
               </span>
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                  Índice G
+                  Nível de atenção
                 </span>
                 <span className="text-2xl font-black text-blue-400">{simResultado.gravidade}</span>
               </div>
@@ -162,7 +161,7 @@ export default function ClassificacaoPage() {
                 className="bg-slate-950 text-white border-slate-700 font-mono"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">
-                log₁₀(V) = {Math.log10(simValor > 0 ? simValor : 1).toFixed(2)}
+                escala do valor = {Math.log10(simValor > 0 ? simValor : 1).toFixed(2)}
               </span>
             </div>
 
@@ -185,7 +184,7 @@ export default function ClassificacaoPage() {
           <div className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
             <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
             <span>
-              <strong>Diagnóstico Determinístico do Simulador:</strong> {simResultado.motivo}
+              <strong>Resultado da análise:</strong> {simResultado.motivo}
             </span>
           </div>
         </CardContent>
@@ -194,7 +193,7 @@ export default function ClassificacaoPage() {
       {/* Visão Comparada dos Estados da Carteira */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-          Fila Ordenada por Gravidade dentro de Cada Estado
+          Obras ordenadas por nível de atenção
         </h2>
 
         {/* 1. PRAZO VENCIDO */}
@@ -231,7 +230,7 @@ export default function ClassificacaoPage() {
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                      Gravidade
+                      Nível de atenção
                     </span>
                     <span className="text-xl font-black text-red-600">
                       {obra.gravidade_score.toFixed(2)}
@@ -239,7 +238,7 @@ export default function ClassificacaoPage() {
                   </div>
                   <Link to={`/obras/${obra.id}`}>
                     <Button size="sm" variant="outline" className="text-xs font-semibold">
-                      Fiscalizar
+                      Ver detalhes
                     </Button>
                   </Link>
                 </div>
@@ -282,7 +281,7 @@ export default function ClassificacaoPage() {
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                      Gravidade
+                      Nível de atenção
                     </span>
                     <span className="text-xl font-black text-amber-600">
                       {obra.gravidade_score.toFixed(2)}
@@ -290,7 +289,7 @@ export default function ClassificacaoPage() {
                   </div>
                   <Link to={`/obras/${obra.id}`}>
                     <Button size="sm" variant="outline" className="text-xs font-semibold">
-                      Fiscalizar
+                      Ver detalhes
                     </Button>
                   </Link>
                 </div>
@@ -333,7 +332,7 @@ export default function ClassificacaoPage() {
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                      Gravidade
+                      Nível de atenção
                     </span>
                     <span className="text-xl font-black text-emerald-600">
                       {obra.gravidade_score.toFixed(2)}
@@ -341,7 +340,7 @@ export default function ClassificacaoPage() {
                   </div>
                   <Link to={`/obras/${obra.id}`}>
                     <Button size="sm" variant="outline" className="text-xs font-semibold">
-                      Fiscalizar
+                      Ver detalhes
                     </Button>
                   </Link>
                 </div>

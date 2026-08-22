@@ -377,7 +377,7 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
 
     await new Promise((r) => setTimeout(r, 400))
     setProgress(40)
-    setProcessStep('Skip AI Auditor: Extraindo réguas, vigências, prazos e penalidades...')
+    setProcessStep('Lendo o contrato...')
 
     let extracaoFinal = resultadoDeterminista
 
@@ -430,11 +430,11 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
 
     await new Promise((r) => setTimeout(r, 400))
     setProgress(70)
-    setProcessStep('Executando 4 Checagens de Coerência Determinísticas (sem IA)...')
+    setProcessStep('Verificando o conteúdo do contrato...')
 
     await new Promise((r) => setTimeout(r, 400))
     setProgress(85)
-    setProcessStep('Calculando classificação de estado e índice de gravidade G...')
+    setProcessStep('Calculando nível de atenção da obra...')
 
     const novaObra: Partial<ObraRecord> = {
       ...extracaoFinal.obra,
@@ -458,7 +458,7 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
         liquidacoes_extraidas: extracaoFinal.liquidacoes.length,
         texto_destaque: extracaoFinal.obra.tem_marco_vencido
           ? 'Cláusula com marco temporal identificado com penalidade moratória associada.'
-          : `Régua de medição: ${extracaoFinal.obra.periodicidade_tipo} (${extracaoFinal.obra.periodicidade_dias} dias).`,
+          : `Regras do contrato: ${extracaoFinal.obra.periodicidade_tipo} (${extracaoFinal.obra.periodicidade_dias} dias).`,
       },
     }
 
@@ -552,10 +552,9 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
       setIsProcessing(false)
 
       toast({
-        title: 'Contrato e Entidades Extraídos com Sucesso!',
-        description: `Classificado: ${savedObra.status_classificacao}. Extraído(s): ${extracaoFinal.obrigacoes.length} obrigações, ${extracaoFinal.inconsistencias.length} inconsistências, ${extracaoFinal.aditivos.length} aditivos e ${extracaoFinal.liquidacoes.length} liquidações.`,
+        title: 'Contrato e dados extraídos com sucesso!',
+        description: `Classificado: ${savedObra.status_classificacao}. Encontramos ${extracaoFinal.obrigacoes.length} itens do contrato, ${extracaoFinal.inconsistencias.length} problemas, ${extracaoFinal.aditivos.length} mudanças e ${extracaoFinal.liquidacoes.length} liquidações.`,
       })
-
       navigate(`/obras/${savedObra.id}`)
     } catch (error: any) {
       setIsProcessing(false)
@@ -573,14 +572,13 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-800">
           <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-          Ingresso Automático de Contratos via IA
+          Entrada automática de contratos
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-          Upload de Contrato & Extração de Réguas
+          Upload de Contrato Público
         </h1>
         <p className="text-xs text-slate-500 leading-relaxed">
-          O PDF de centenas de páginas é convertido em campos rastreáveis: réguas de periodicidade,
-          penalidades, marcos contratuais e verificação de 4 inconsistências de texto.
+          Faça upload do contrato em PDF. O sistema lê e resume para você.
         </p>
       </div>
 
@@ -657,8 +655,8 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
             </Badge>
           </div>
           <CardDescription className="text-xs">
-            Você pode editar ou colar o texto de qualquer contrato administrativo para submeter ao
-            motor de IA e checagens determinísticas.
+            Você pode editar ou colar o texto de qualquer contrato administrativo para processar as
+            regras e verificar problemas no texto.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -689,7 +687,7 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
                 className="bg-blue-700 hover:bg-blue-800 text-white font-bold px-8 shadow-md flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
-                Iniciar Extração com IA & Checagens
+                Ler o contrato
               </Button>
             </div>
           )}

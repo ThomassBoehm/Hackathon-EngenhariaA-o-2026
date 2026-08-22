@@ -164,14 +164,14 @@ export default function Dashboard() {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30">
               <Sparkles className="h-3.5 w-3.5 text-blue-400" />
-              Priorização Determinística de Fiscalização
+              Obras que precisam de atenção
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Onde o fiscal deve olhar primeiro.
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              O SIGO extrai as réguas do contrato em PDF, vigia o silêncio de liquidações
-              orçamentárias e ranqueia a carteira por gravidade de impacto econômico.
+              O SIGO lê contratos públicos, monitora pagamentos e classifica as obras por nível de
+              atenção.
             </p>
           </div>
 
@@ -319,7 +319,7 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              Sem âncora ou periodicidade. Fora do ranking de gravidade.
+              Sem data definida. Fora da lista de atenção.
             </p>
             <div className="mt-3 text-[11px] text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded inline-block">
               Sinaliza sem acusar
@@ -357,7 +357,7 @@ export default function Dashboard() {
             </CardDescription>
             <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
-              {obrasComInconsistencias} Contratos com Apontamentos
+              {obrasComInconsistencias} Contratos com alertas
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -396,7 +396,7 @@ export default function Dashboard() {
               Carteira de Obras e Contratos Públicos
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Filtros avançados e ordenação por índice de gravidade{' '}
+              Filtros e ordenação por nível de atenção{' '}
               <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-blue-700 dark:text-blue-300">
                 G = A × log₁₀(V) × S
               </code>
@@ -432,7 +432,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gravidade">Maior Gravidade (G)</SelectItem>
+                    <SelectItem value="gravidade">Maior atenção</SelectItem>
                     <SelectItem value="dias_liq">Mais Dias sem Liquidação</SelectItem>
                     <SelectItem value="valor_desc">Maior Valor Global</SelectItem>
                     <SelectItem value="valor_asc">Menor Valor Global</SelectItem>
@@ -506,19 +506,19 @@ export default function Dashboard() {
                 </Select>
               </div>
 
-              {/* Inconsistências de Texto */}
+              {/* Problemas no texto */}
               <div>
                 <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                  Inconsistências (4 Checagens)
+                  Problemas (4 verificações)
                 </label>
                 <Select value={filtroInconsistencia} onValueChange={setFiltroInconsistencia}>
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Inconsistências" />
+                    <SelectValue placeholder="Problemas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas</SelectItem>
-                    <SelectItem value="com_inconsistencia">Com Inconsistência Detectada</SelectItem>
-                    <SelectItem value="sem_inconsistencia">Sem Inconsistências</SelectItem>
+                    <SelectItem value="com_inconsistencia">Com problemas</SelectItem>
+                    <SelectItem value="sem_inconsistencia">Sem problemas</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -617,7 +617,7 @@ export default function Dashboard() {
                           variant="outline"
                           className="text-[10px] border-amber-400 text-amber-800 bg-amber-50 dark:bg-amber-950 dark:text-amber-300"
                         >
-                          Inconsistência Texto
+                          Problemas no texto
                         </Badge>
                       )}
                       {obra.qtd_aditivos && obra.qtd_aditivos > 0 ? (
@@ -625,7 +625,7 @@ export default function Dashboard() {
                           variant="outline"
                           className="text-[10px] border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-300"
                         >
-                          {obra.qtd_aditivos} Aditivo(s) (+{obra.percentual_aditado_total}%)
+                          {obra.qtd_aditivos} Mudança(s) (+{obra.percentual_aditado_total}%)
                         </Badge>
                       ) : null}
                     </div>
@@ -650,7 +650,7 @@ export default function Dashboard() {
 
                       <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
                         <span className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
-                          Gravidade (G):
+                          Nível de atenção:
                         </span>
                         <span
                           className={`font-mono font-black text-sm ${
@@ -718,7 +718,7 @@ export default function Dashboard() {
                         className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold h-8"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
-                        Ver Apontamentos
+                        Ver detalhes
                       </Button>
                     </Link>
 

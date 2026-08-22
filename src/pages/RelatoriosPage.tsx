@@ -64,9 +64,9 @@ export default function RelatoriosPage() {
       'Valor Global',
       'Valor Liquidado',
       'Status Classificacao',
-      'Gravidade G',
+      'Nivel de atencao',
       'Dias Sem Liquidacao',
-      'Inconsistencias',
+      'Problemas',
     ]
 
     const rows = obras.map((o) => [
@@ -113,7 +113,7 @@ export default function RelatoriosPage() {
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-blue-700" />
-            Relatórios Executivos & Auditoria de Obrigações
+            Relatórios & auditoria
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Resumos consolidados para órgãos de controle (TCM, TCE-SP, CGU e Controladoria
@@ -206,10 +206,10 @@ export default function RelatoriosPage() {
       <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold">
-            Mapa Sintético da Carteira de Contratos de Obras
+            Mapa da carteira de contratos de obras
           </CardTitle>
           <CardDescription className="text-xs">
-            Visão consolidada com réguas de contrato, índice de gravidade G e situação
+            Visão consolidada com as regras do contrato, nível de atenção (G) e situação
             física-financeira.
           </CardDescription>
         </CardHeader>
@@ -224,11 +224,11 @@ export default function RelatoriosPage() {
                   <th className="p-3">Liquidado</th>
                   <th className="p-3">Periodicidade</th>
                   <th className="p-3">Dias s/ Liq</th>
-                  <th className="p-3">Gravidade G</th>
+                  <th className="p-3">Nível de atenção</th>
                   <th className="p-3">Estado SIGO</th>
-                  <th className="p-3">Inconsistências</th>
+                  <th className="p-3">Problemas</th>
                 </tr>
-              </thead>
+              </thead>{' '}
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {obras.map((obra) => {
                   const badge = getStatusBadgeInfo(obra.status_classificacao)
@@ -294,10 +294,10 @@ export default function RelatoriosPage() {
                             variant="outline"
                             className="text-[10px] text-amber-800 border-amber-300 bg-amber-50"
                           >
-                            Detectada
+                            Com problemas
                           </Badge>
                         ) : (
-                          <span className="text-slate-400 text-[11px]">Regular</span>
+                          <span className="text-slate-400 text-[11px]">Sem problemas</span>
                         )}
                       </td>
                     </tr>

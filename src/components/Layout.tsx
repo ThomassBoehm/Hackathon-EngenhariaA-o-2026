@@ -33,7 +33,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: 'Dashboard & Obras', href: '/', icon: LayoutDashboard },
     { name: 'Upload & IA', href: '/upload', icon: UploadCloud, badge: 'IA Leitora' },
-    { name: 'Classificação & Gravidade', href: '/classificacao', icon: ShieldAlert },
+    { name: 'Entenda os alertas', href: '/classificacao', icon: ShieldAlert },
     { name: 'Busca Avançada', href: '/busca', icon: Search },
     { name: 'Relatórios & Auditoria', href: '/relatorios', icon: BarChart3 },
   ]
@@ -71,9 +71,9 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
                 <span
                   className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-tighter truncate max-w-[200px] sm:max-w-[260px] md:max-w-none -mt-0.5"
-                  title="Sistema Inteligente de Gestão de Obrigações"
+                  title="Acompanhe as obras da sua cidade"
                 >
-                  Sistema Inteligente de Gestão de Obrigações
+                  Acompanhe as obras da sua cidade
                 </span>
               </div>
             </Link>
@@ -138,20 +138,20 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
                   <div className="p-3 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
                     <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
-                      1. As Duas Réguas
+                      1. Como acompanhamos
                     </h4>
                     <p className="text-xs leading-relaxed">
-                      <strong>Marco Contratual:</strong> Obrigação datada da contratada. Quando
-                      vence, a falha é da empresa (sem carência).
+                      <strong>Marco Contratual:</strong> Entrega datada da empresa. Quando vence, a
+                      falha é da empresa (sem carência).
                       <br />
-                      <strong>Liquidação Orçamentária:</strong> Ato da Administração (proxy de
-                      medição). Protegido por carência fixa de 15 dias.
+                      <strong>Liquidações:</strong> Pagamento feito pela Administração. Protegido
+                      por carência de trâmite de 15 dias.
                     </p>
                   </div>
 
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-lg border border-amber-200 dark:border-amber-800">
                     <h4 className="font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                      2. Fórmula de Gravidade determinística
+                      2. Como calculamos o alerta
                     </h4>
                     <code className="text-xs bg-amber-100 dark:bg-amber-900 px-2 py-1 rounded font-mono font-bold block my-1">
                       G = A × log₁₀(V) × S
@@ -168,13 +168,13 @@ export default function Layout({ children }: LayoutProps) {
 
                   <div className="p-3 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
                     <h4 className="font-semibold text-slate-900 dark:text-slate-200 mb-1">
-                      3. As 4 Checagens de Coerência (Sem IA)
+                      3. As 4 verificações de problemas no texto
                     </h4>
                     <ul className="list-disc pl-4 text-xs space-y-1 text-slate-600 dark:text-slate-400">
-                      <li>Referência a cláusula inexistente via regex de títulos.</li>
-                      <li>Extenso divergente do algarismo numérico (ex: 12 (dez)).</li>
-                      <li>Aritmética e limite legal de aditivos (ex: 50% vs 25% da Lei 14.133).</li>
-                      <li>Identificador conflitante de pregão/contrato no documento.</li>
+                      <li>Referência a cláusula que não existe no contrato.</li>
+                      <li>Número por extenso diferente do algarismo (ex: 12 (dez)).</li>
+                      <li>Conta errada ou limite de mudanças acima da Lei 14.133.</li>
+                      <li>Identificador de pregão/contrato conflitante no documento.</li>
                     </ul>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export default function Layout({ children }: LayoutProps) {
               S
             </div>
             <span>
-              <strong>SIGO</strong> · Sistema Inteligente de Gestão de Obrigações Públicas.
+              <strong>SIGO</strong> · Transparência de Obras Públicas.
             </span>
           </div>
           <p className="text-center sm:text-right text-slate-400">

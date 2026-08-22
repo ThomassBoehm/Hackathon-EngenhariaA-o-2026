@@ -147,7 +147,7 @@ export default function ObraForm() {
       const saved = await saveObra(formData)
       toast({
         title: isEditing ? 'Contrato atualizado!' : 'Contrato cadastrado com sucesso!',
-        description: `Classificado determinísticamente como: ${calculoPreview.status} (G = ${calculoPreview.gravidade})`,
+        description: `Classificado como: ${calculoPreview.status} (G = ${calculoPreview.gravidade})`,
       })
       navigate(`/obras/${saved.id}`)
     } catch (error: any) {
@@ -210,7 +210,7 @@ export default function ObraForm() {
             <div className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-blue-400" />
               <CardTitle className="text-base text-blue-100">
-                Motor Determinístico SIGO (Cálculo em Tempo Real)
+                Como calculamos o alerta (cálculo em tempo real)
               </CardTitle>
             </div>
             <span
@@ -221,21 +221,21 @@ export default function ObraForm() {
             </span>
           </div>
           <CardDescription className="text-xs text-slate-300">
-            A cada alteração nos campos abaixo, o SIGO recalcula instantaneamente o estado e o
-            índice de gravidade (G).
+            A cada alteração nos campos abaixo, o SIGO recalcula instantaneamente o estado e o nível
+            de atenção (G).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 pt-0 text-xs">
           <div className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
             <div>
               <span className="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">
-                Diagnóstico:
+                Resultado da análise:
               </span>
               <p className="text-slate-200 font-medium leading-relaxed">{calculoPreview.motivo}</p>
             </div>
             <div className="text-right shrink-0 bg-slate-900 px-3 py-2 rounded border border-slate-800">
               <span className="text-slate-400 font-bold text-[10px] uppercase block">
-                Gravidade (G)
+                Nível de atenção
               </span>
               <span className="text-xl font-black text-blue-400">{calculoPreview.gravidade}</span>
             </div>
@@ -488,11 +488,10 @@ export default function ObraForm() {
         <CardHeader>
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-600" />
-            3. Réguas Extraídas do Contrato (Parâmetros de Auditoria)
+            3. Regras do contrato (parâmetros de auditoria)
           </CardTitle>
           <CardDescription className="text-xs">
-            Conforme Seção 6 do PDF: A régua vem do contrato. Quando não define periodicidade, o
-            SIGO sinaliza mas não acusa.
+            As regras do contrato. Quando não define periodicidade, o SIGO sinaliza mas não acusa.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -704,7 +703,7 @@ export default function ObraForm() {
                 htmlFor="inconsistencias_switch"
                 className="text-xs font-medium cursor-pointer text-amber-800 dark:text-amber-400"
               >
-                Existem inconsistências de coerência de texto no contrato
+                Existem problemas no texto do contrato
               </Label>
             </div>
           </div>

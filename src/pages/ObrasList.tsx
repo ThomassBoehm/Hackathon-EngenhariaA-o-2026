@@ -149,8 +149,8 @@ export default function ObrasList() {
             Carteira de Obras e Contratos Públicos
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Gestão completa, classificação de risco por gravidade e monitoramento de réguas
-            contratuais.
+            Gestão completa, classificação por nível de atenção e monitoramento das regras do
+            contrato.
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export default function ObrasList() {
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gravidade">Maior Gravidade (G)</SelectItem>
+                  <SelectItem value="gravidade">Maior atenção</SelectItem>
                   <SelectItem value="dias_liq">Mais Dias sem Liquidação</SelectItem>
                   <SelectItem value="valor_desc">Maior Valor Global</SelectItem>
                   <SelectItem value="valor_asc">Menor Valor Global</SelectItem>
@@ -269,19 +269,19 @@ export default function ObrasList() {
               </Select>
             </div>
 
-            {/* Inconsistências de Texto */}
+            {/* Problemas no texto */}
             <div>
               <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                Inconsistências (4 Checagens)
+                Problemas (4 verificações)
               </label>
               <Select value={filtroInconsistencia} onValueChange={setFiltroInconsistencia}>
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Inconsistências" />
+                  <SelectValue placeholder="Problemas" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todas</SelectItem>
-                  <SelectItem value="com_inconsistencia">Com Inconsistência Detectada</SelectItem>
-                  <SelectItem value="sem_inconsistencia">Sem Inconsistências</SelectItem>
+                  <SelectItem value="com_inconsistencia">Com problemas</SelectItem>
+                  <SelectItem value="sem_inconsistencia">Sem problemas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -378,7 +378,7 @@ export default function ObrasList() {
                         variant="outline"
                         className="text-[10px] border-amber-400 text-amber-800 bg-amber-50"
                       >
-                        Inconsistência Texto
+                        Problemas no texto
                       </Badge>
                     )}
                     {obra.qtd_aditivos && obra.qtd_aditivos > 0 ? (
@@ -386,7 +386,7 @@ export default function ObrasList() {
                         variant="outline"
                         className="text-[10px] border-blue-300 text-blue-700 bg-blue-50"
                       >
-                        {obra.qtd_aditivos} Aditivo(s) (+{obra.percentual_aditado_total}%)
+                        {obra.qtd_aditivos} Mudança(s) (+{obra.percentual_aditado_total}%)
                       </Badge>
                     ) : null}
                   </div>
@@ -411,7 +411,7 @@ export default function ObrasList() {
 
                     <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
                       <span className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
-                        Gravidade (G):
+                        Nível de atenção:
                       </span>
                       <span
                         className={`font-mono font-black text-sm ${
@@ -479,7 +479,7 @@ export default function ObrasList() {
                       className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold h-8"
                     >
                       <Eye className="h-3.5 w-3.5 mr-1.5" />
-                      Ver Apontamentos
+                      Ver detalhes
                     </Button>
                   </Link>
 
