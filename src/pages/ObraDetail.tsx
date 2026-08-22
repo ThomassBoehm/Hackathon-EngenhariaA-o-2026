@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   Building2,
@@ -25,11 +25,16 @@ import {
   CheckSquare,
   FileCheck2,
   AlertCircle,
+  Send,
+  Loader2,
+  MessageCircleQuestion,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import pb from '@/lib/pocketbase/client'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getRotuloChecagem } from '@/lib/sigoEngine'
 import {
   Dialog,
   DialogContent,
@@ -67,6 +72,185 @@ import {
 } from '@/types/sigo'
 import { formatarMoeda, formatarData, getStatusBadgeInfo } from '@/lib/sigoEngine'
 import { toast } from '@/hooks/use-toast'
+
+// ============ Chat de dúvidas do contrato (ancorado no texto deste contrato) ============
+
+interface Mensagem {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface ChatContratoProps {
+  obraId: string
+  temTextoContrato: boolean
+}
+
+const PERGUNTAS_SUGERIDAS = [
+  'Qual o prazo de execução?',
+  'Como funcionam os pagamentos?',
+  'Este contrato define cronograma?',
+  'Que multas estão previstas?',
+]
+
+function ChatContrato({ obraId, temTextoContrato }: ChatContratoProps) {
+  const [mensagens, setMensagens] = useState<Mensagem[]>([])
+  const [pergunta, setPergunta] = useState('')
+  const [carregando, setCarregando] = useState(false)
+  const fimRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fimRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [mensagens, carregando])
+
+  const enviar = async (texto: string) => {
+    const limpo = texto.trim()
+    if (!limpo || carregando) return
+
+    const historico = [...mensagens]
+    setMensagens([...historico, { role: 'user', content: limpo }])
+    setPergunta('')
+    setCarregando(true)
+
+    try {
+      const res = await pb.send('/backend/v1/chat-contrato', {
+        method: 'POST',
+        body: JSON.stringify({ obraId, pergunta: limpo, historico }),
+      })
+
+      setMensagens((atual) => [
+        ...atual,
+        {
+          role: 'assistant',
+          content: res?.resposta || 'Não consegui responder agora. Tente reformular a pergunta.',
+        },
+      ])
+    } catch (err) {
+      console.error('Erro no chat do contrato:', err)
+      setMensagens((atual) => [
+        ...atual,
+        {
+          role: 'assistant',
+          content:
+            'Não foi possível consultar o contrato agora. Os dados já extraídos continuam disponíveis nas outras abas.',
+        },
+      ])
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  if (!temTextoContrato) {
+    return (
+      <div className="p-10 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+        <AlertCircle className="h-9 w-9 text-slate-400 mx-auto mb-2" />
+        <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+          Texto do contrato indisponível
+        </h4>
+        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+          As perguntas são respondidas apenas com base no texto deste contrato. Como ele não está
+          armazenado, não há base para responder. Reenvie o PDF para habilitar.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+        <MessageCircleQuestion className="h-4 w-4 text-blue-700 dark:text-blue-300 mt-0.5 shrink-0" />
+        <p className="text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed">
+          Perguntas são respondidas <strong>somente com o texto deste contrato</strong>. Quando a
+          informação não estiver no documento, a resposta dirá isso em vez de estimar. Os problemas
+          apontados na aba "Problemas encontrados" não vêm daqui — são verificações automáticas.
+        </p>
+      </div>
+
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+        <CardContent className="p-3">
+          <div className="min-h-[220px] max-h-[420px] overflow-y-auto space-y-3 pr-1">
+            {mensagens.length === 0 && !carregando && (
+              <div className="pt-6 text-center">
+                <p className="text-xs text-slate-500 mb-3">
+                  Pergunte qualquer coisa sobre este contrato.
+                </p>
+                <div className="flex flex-wrap gap-1.5 justify-center">
+                  {PERGUNTAS_SUGERIDAS.map((p) => (
+                    <Button
+                      key={p}
+                      size="sm"
+                      variant="outline"
+                      className="text-[11px] h-7 font-medium"
+                      onClick={() => enviar(p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mensagens.map((m, i) => (
+              <div
+                key={i}
+                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap ${
+                    m.role === 'user'
+                      ? 'bg-blue-700 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+                  }`}
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))}
+
+            {carregando && (
+              <div className="flex justify-start">
+                <div className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />
+                  <span className="text-xs text-slate-500">Consultando o contrato...</span>
+                </div>
+              </div>
+            )}
+            <div ref={fimRef} />
+          </div>
+
+          <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 mt-3">
+            <Input
+              value={pergunta}
+              onChange={(e) => setPergunta(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  enviar(pergunta)
+                }
+              }}
+              placeholder="Escreva sua dúvida sobre este contrato..."
+              className="text-xs"
+              disabled={carregando}
+            />
+            <Button
+              size="sm"
+              onClick={() => enviar(pergunta)}
+              disabled={carregando || !pergunta.trim()}
+              className="bg-blue-700 hover:bg-blue-800 shrink-0"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          <p className="text-[10px] text-slate-400 mt-2">
+            Confira sempre a cláusula citada no contrato antes de usar esta informação.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ============ Fim do chat ============
 
 export default function ObraDetail() {
   const { id } = useParams<{ id: string }>()
@@ -440,7 +624,7 @@ export default function ObraDetail() {
 
       {/* Tabs com os Detalhes da Auditoria */}
       <Tabs defaultValue="obrigacoes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto p-1 bg-slate-100 dark:bg-slate-800">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-slate-100 dark:bg-slate-800">
           <TabsTrigger value="obrigacoes" className="text-xs py-2 font-semibold">
             <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
             O que o contrato promete ({obrigacoes.length})
@@ -456,7 +640,27 @@ export default function ObraDetail() {
             <DollarSign className="h-3.5 w-3.5 mr-1.5" />
             Liquidações Financeiras ({liquidacoes.length})
           </TabsTrigger>
+          <TabsTrigger value="duvidas" className="text-xs py-2 font-semibold">
+            <HelpCircle className="h-3.5 w-3.5 mr-1.5 text-blue-700" />
+            Tirar dúvidas
+          </TabsTrigger>
         </TabsList>
+
+        {/* TAB 4: Chat de dúvidas, ancorado no texto deste contrato */}
+        <TabsContent value="duvidas" className="space-y-4 pt-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-blue-700" />
+              Dúvidas sobre este contrato
+            </h3>
+            <p className="text-xs text-slate-500">
+              Respostas baseadas exclusivamente no texto deste contrato, com indicação da cláusula.
+            </p>
+          </div>
+          {obra && (
+            <ChatContrato obraId={obra.id} temTextoContrato={Boolean(obra.texto_contrato)} />
+          )}
+        </TabsContent>
 
         {/* TAB 1: Obrigações e Marcos Contratuais */}
         <TabsContent value="obrigacoes" className="space-y-4 pt-4">
@@ -608,10 +812,12 @@ export default function ObraDetail() {
             <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-emerald-300">
               <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto mb-2" />
               <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                Sem problemas
+                Nenhum problema encontrado nas verificações
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                O contrato passou nas verificações de coerência sem apontamentos.
+                As checagens automáticas de coerência não apontaram divergência no texto. Isso não
+                atesta que o contrato esteja correto: o SIGO verifica apenas a coerência interna do
+                documento, não a execução da obra nem a adequação do preço.
               </p>
             </div>
           ) : (
@@ -631,7 +837,7 @@ export default function ObraDetail() {
                           variant="outline"
                           className="text-[10px] uppercase font-bold border-amber-400 text-amber-800 bg-amber-50"
                         >
-                          {inc.tipo_checagem.replace('_', ' ')}
+                          {getRotuloChecagem(inc.tipo_checagem).titulo}
                         </Badge>
                         <Badge
                           variant={
@@ -649,6 +855,17 @@ export default function ObraDetail() {
                       <CardTitle className="text-sm font-bold text-slate-900 dark:text-white pt-1">
                         {inc.titulo}
                       </CardTitle>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {getRotuloChecagem(inc.tipo_checagem).explicacao}
+                      </p>
+                      {inc.origem === 'ia' && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] w-fit border-slate-300 text-slate-600 bg-slate-50"
+                        >
+                          Sugestão da IA — não verificada
+                        </Badge>
+                      )}
                       {inc.localizacao_clausula && (
                         <CardDescription className="text-xs font-mono text-blue-700 dark:text-blue-300">
                           Local: {inc.localizacao_clausula}
@@ -675,7 +892,7 @@ export default function ObraDetail() {
                           {inc.valor_encontrado || '—'}
                         </div>
                         <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded border border-emerald-200 dark:border-emerald-900 text-emerald-900 dark:text-emerald-300">
-                          <span className="font-bold block">Esperado / Lei:</span>
+                          <span className="font-bold block">Esperado (pelo próprio contrato):</span>
                           {inc.valor_esperado || '—'}
                         </div>
                       </div>
