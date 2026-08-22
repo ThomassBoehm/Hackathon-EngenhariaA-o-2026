@@ -434,7 +434,7 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
 
     await new Promise((r) => setTimeout(r, 400))
     setProgress(85)
-    setProcessStep('Calculando nível de atenção da obra...')
+    setProcessStep('Calculando o status da obra...')
 
     const novaObra: Partial<ObraRecord> = {
       ...extracaoFinal.obra,
@@ -553,7 +553,12 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
 
       toast({
         title: 'Contrato e dados extraídos com sucesso!',
-        description: `Classificado: ${savedObra.status_classificacao}. Encontramos ${extracaoFinal.obrigacoes.length} itens do contrato, ${extracaoFinal.inconsistencias.length} problemas, ${extracaoFinal.aditivos.length} mudanças e ${extracaoFinal.liquidacoes.length} liquidações.`,
+        description: `Status: ${
+          savedObra.status_classificacao === 'prazo_vencido' ||
+          savedObra.status_classificacao === 'fora_do_ritmo'
+            ? 'Fora do ritmo'
+            : 'Dentro do prazo'
+        }. Encontramos ${extracaoFinal.obrigacoes.length} itens do contrato, ${extracaoFinal.inconsistencias.length} problemas, ${extracaoFinal.aditivos.length} mudanças e ${extracaoFinal.liquidacoes.length} liquidações.`,
       })
       navigate(`/obras/${savedObra.id}`)
     } catch (error: any) {

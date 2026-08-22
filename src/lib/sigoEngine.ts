@@ -711,40 +711,42 @@ export function formatarData(dataIso?: string | null): string {
   }
 }
 
+/**
+ * Status binário de apresentação pública do SIGO.
+ * A UI não expõe mais "Nível de atenção" nem os 4 estados internos — apenas
+ * dois rótulos: "Dentro do prazo" (verde) e "Fora do ritmo" (âmbar/laranja).
+ *
+ * O cálculo é individual por obra: "Fora do ritmo" significa que a obra
+ * ultrapassou sua própria carência de trâmite (prazo_vencido) ou já saiu do
+ * ciclo pactuado (fora_do_ritmo). Obras sem dados de execução são tratadas
+ * como "Dentro do prazo" (não há o que sinalizar).
+ */
+export type StatusBinario = 'dentro_do_prazo' | 'fora_do_ritmo'
+
+export function getStatusBinario(status: StatusClassificacao): StatusBinario {
+  if (status === 'prazo_vencido' || status === 'fora_do_ritmo') return 'fora_do_ritmo'
+  return 'dentro_do_prazo'
+}
+
 export function getStatusBadgeInfo(status: StatusClassificacao) {
-  switch (status) {
-    case 'prazo_vencido':
-      return {
-        label: 'Prazo Vencido',
-        bg: 'bg-red-500/15 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900',
-        dot: 'bg-red-600',
-        cardBorder: 'border-l-4 border-l-red-500 hover:border-red-500',
-        badgeColor: 'destructive',
-      }
+  const binario = getStatusBinario(status)
+  switch (binario) {
     case 'fora_do_ritmo':
       return {
-        label: 'Fora do Ritmo',
+        label: 'Fora do ritmo',
         bg: 'bg-amber-500/15 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900',
         dot: 'bg-amber-500',
         cardBorder: 'border-l-4 border-l-amber-500 hover:border-amber-500',
         badgeColor: 'warning',
       }
-    case 'no_ritmo':
+    case 'dentro_do_prazo':
+    default:
       return {
-        label: 'No Ritmo Previsto',
+        label: 'Dentro do prazo',
         bg: 'bg-emerald-500/15 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900',
         dot: 'bg-emerald-600',
         cardBorder: 'border-l-4 border-l-emerald-500 hover:border-emerald-500',
         badgeColor: 'success',
-      }
-    case 'sem_dados':
-    default:
-      return {
-        label: 'Sem Dados de Execução',
-        bg: 'bg-slate-500/15 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800',
-        dot: 'bg-slate-400',
-        cardBorder: 'border-l-4 border-l-slate-400 hover:border-slate-400',
-        badgeColor: 'secondary',
       }
   }
 }

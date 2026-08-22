@@ -151,18 +151,21 @@ export default function Layout({ children }: LayoutProps) {
 
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-lg border border-amber-200 dark:border-amber-800">
                     <h4 className="font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                      2. Como calculamos o alerta
+                      2. Como classificamos o status
                     </h4>
-                    <code className="text-xs bg-amber-100 dark:bg-amber-900 px-2 py-1 rounded font-mono font-bold block my-1">
-                      G = A × log₁₀(V) × S
-                    </code>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
-                      <strong>A:</strong> Dias sem liquidação ÷ periodicidade do contrato
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Cada obra tem sua própria <strong>carência de trâmite</strong> (prazo que a
+                      Administração tem para liquidar a medição). O status é binário:
                       <br />
-                      <strong>V:</strong> Valor global em reais (logaritmo impede distorção)
+                      <strong className="text-emerald-700 dark:text-emerald-400">
+                        Dentro do prazo
+                      </strong>{' '}
+                      — dentro do ciclo pactuado e da carência de trâmite.
                       <br />
-                      <strong>S:</strong> Maior percentual de multa previsto ÷ 10 (1.0 quando
-                      remetido ao TR/Edital)
+                      <strong className="text-amber-700 dark:text-amber-400">
+                        Fora do ritmo
+                      </strong>{' '}
+                      — a obra ultrapassou sua própria carência de trâmite de liquidação.
                     </p>
                   </div>
 

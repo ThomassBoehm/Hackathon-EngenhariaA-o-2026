@@ -147,7 +147,7 @@ export default function ObraForm() {
       const saved = await saveObra(formData)
       toast({
         title: isEditing ? 'Contrato atualizado!' : 'Contrato cadastrado com sucesso!',
-        description: `Classificado como: ${calculoPreview.status} (G = ${calculoPreview.gravidade})`,
+        description: `Status: ${badgePreview.label}`,
       })
       navigate(`/obras/${saved.id}`)
     } catch (error: any) {
@@ -203,14 +203,14 @@ export default function ObraForm() {
         </div>
       </div>
 
-      {/* Box de Preview da Classificação SIGO (Determinística em tempo real) */}
+      {/* Box de Preview do Status SIGO (Determinístico em tempo real) */}
       <Card className="bg-slate-900 text-white border-blue-900 shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-blue-400" />
               <CardTitle className="text-base text-blue-100">
-                Como calculamos o alerta (cálculo em tempo real)
+                Status da obra (cálculo em tempo real)
               </CardTitle>
             </div>
             <span
@@ -221,8 +221,8 @@ export default function ObraForm() {
             </span>
           </div>
           <CardDescription className="text-xs text-slate-300">
-            A cada alteração nos campos abaixo, o SIGO recalcula instantaneamente o estado e o nível
-            de atenção (G).
+            A cada alteração nos campos abaixo, o SIGO recalcula instantaneamente se a obra está
+            dentro do prazo ou fora do ritmo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 pt-0 text-xs">
@@ -232,12 +232,6 @@ export default function ObraForm() {
                 Resultado da análise:
               </span>
               <p className="text-slate-200 font-medium leading-relaxed">{calculoPreview.motivo}</p>
-            </div>
-            <div className="text-right shrink-0 bg-slate-900 px-3 py-2 rounded border border-slate-800">
-              <span className="text-slate-400 font-bold text-[10px] uppercase block">
-                Nível de atenção
-              </span>
-              <span className="text-xl font-black text-blue-400">{calculoPreview.gravidade}</span>
             </div>
           </div>
         </CardContent>
@@ -509,7 +503,7 @@ export default function ObraForm() {
                   <SelectItem value="explícita">Explícita (30 dias / Mensal)</SelectItem>
                   <SelectItem value="por etapa">Por Etapa Físico-Financeira</SelectItem>
                   <SelectItem value="inferida">Inferida (ex: 12x MÊS)</SelectItem>
-                  <SelectItem value="ausente">Ausente (Sem dados para ranking)</SelectItem>
+                  <SelectItem value="ausente">Ausente (sem periodicidade)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -557,7 +551,9 @@ export default function ObraForm() {
                 }
                 className="mt-1 font-mono"
               />
-              <span className="text-[10px] text-slate-400">Fator S = Multa % ÷ 10</span>
+              <span className="text-[10px] text-slate-400">
+                Percentual máximo de multa contratual
+              </span>
             </div>
 
             <div>
@@ -592,8 +588,7 @@ export default function ObraForm() {
               onCheckedChange={(checked) => updateField('multa_remissao_externa', checked)}
             />
             <Label htmlFor="remissao_externa" className="text-xs font-medium cursor-pointer">
-              Penalidades remetidas a documento externo (TR/Edital) —{' '}
-              <em>Fixa S = 1,0 determinístico</em>
+              Penalidades remetidas a documento externo (TR/Edital)
             </Label>
           </div>
         </CardContent>

@@ -15,7 +15,6 @@ import {
   Trash2,
   Edit,
   ArrowUpDown,
-  FileCheck,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -44,8 +43,8 @@ export default function ObrasList() {
   const [filtroOrgao, setFiltroOrgao] = useState<string>(searchParams.get('orgao') || 'todos')
   const [filtroInconsistencia, setFiltroInconsistencia] = useState<string>('todos')
   const [ordenacao, setOrdenacao] = useState<
-    'gravidade' | 'valor_desc' | 'valor_asc' | 'recente' | 'dias_liq'
-  >('gravidade')
+    'status' | 'valor_desc' | 'valor_asc' | 'recente' | 'dias_liq'
+  >('status')
 
   useEffect(() => {
     loadObras()
@@ -86,8 +85,13 @@ export default function ObrasList() {
       (obra.municipio && obra.municipio.toLowerCase().includes(buscaTexto.toLowerCase())) ||
       obra.objeto.toLowerCase().includes(buscaTexto.toLowerCase())
 
-    // Status
-    const matchStatus = filtroStatus === 'todos' || obra.status_classificacao === filtroStatus
+    // Status binário público
+    const isFora =
+      obra.status_classificacao === 'prazo_vencido' || obra.status_classificacao === 'fora_do_ritmo'
+    const matchStatus =
+      filtroStatus === 'todos' ||
+      (filtroStatus === 'fora_do_ritmo' && isFora) ||
+      (filtroStatus === 'dentro_do_prazo' && !isFora)
 
     // Tipo
     const matchTipo = filtroTipo === 'todos' || obra.tipo_obra === filtroTipo
@@ -106,8 +110,13 @@ export default function ObrasList() {
 
   // Ordenação
   const obrasOrdenadas = [...obrasFiltradas].sort((a, b) => {
-    if (ordenacao === 'gravidade') {
-      return (b.gravidade_score || 0) - (a.gravidade_score || 0)
+    if (ordenacao === 'status') {
+      // Fora do ritmo primeiro
+      const aFora =
+        a.status_classificacao === 'prazo_vencido' || a.status_classificacao === 'fora_do_ritmo'
+      const bFora =
+        b.status_classificacao === 'prazo_vencido' || b.status_classificacao === 'fora_do_ritmo'
+      return Number(bFora) - Number(aFora)
     }
     if (ordenacao === 'valor_desc') {
       return (
@@ -136,7 +145,7 @@ export default function ObrasList() {
     setFiltroTipo('todos')
     setFiltroOrgao('todos')
     setFiltroInconsistencia('todos')
-    setOrdenacao('gravidade')
+    setOrdenacao('status')
   }
 
   return (
@@ -149,8 +158,8 @@ export default function ObrasList() {
             Carteira de Obras e Contratos Públicos
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Gestão completa, classificação por nível de atenção e monitoramento das regras do
-            contrato.
+            Gestão completa, status de execução (dentro do prazo / fora do ritmo) e monitoramento
+            das regras do contrato.
           </p>
         </div>
 
@@ -195,7 +204,7 @@ export default function ObrasList() {
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gravidade">Maior atenção</SelectItem>
+                  <SelectItem value="status">Fora do ritmo primeiro</SelectItem>
                   <SelectItem value="dias_liq">Mais Dias sem Liquidação</SelectItem>
                   <SelectItem value="valor_desc">Maior Valor Global</SelectItem>
                   <SelectItem value="valor_asc">Menor Valor Global</SelectItem>
@@ -210,18 +219,16 @@ export default function ObrasList() {
             {/* Status */}
             <div>
               <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                Estado Contratual
+                Status
               </label>
               <Select value={filtroStatus} onValueChange={setFiltroStatus}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos os Estados</SelectItem>
-                  <SelectItem value="prazo_vencido">Prazo Vencido</SelectItem>
-                  <SelectItem value="fora_do_ritmo">Fora do Ritmo</SelectItem>
-                  <SelectItem value="no_ritmo">No Ritmo Previsto</SelectItem>
-                  <SelectItem value="sem_dados">Sem Dados de Execução</SelectItem>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="dentro_do_prazo">Dentro do prazo</SelectItem>
+                  <SelectItem value="fora_do_ritmo">Fora do ritmo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -391,7 +398,7 @@ export default function ObrasList() {
                     ) : null}
                   </div>
 
-                  {/* Detalhes Financeiros e Gravidade */}
+                  {/* Detalhes Financeiros */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg space-y-2 border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500 font-medium">Valor Atual:</span>
@@ -411,20 +418,10 @@ export default function ObrasList() {
 
                     <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
                       <span className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
-                        Nível de atenção:
+                        Carência de trâmite:
                       </span>
-                      <span
-                        className={`font-mono font-black text-sm ${
-                          obra.gravidade_score > 10
-                            ? 'text-red-600'
-                            : obra.gravidade_score > 3
-                              ? 'text-amber-600'
-                              : obra.gravidade_score > 0
-                                ? 'text-blue-600'
-                                : 'text-slate-400'
-                        }`}
-                      >
-                        {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '0,00'}
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {obra.carencia_dias || 15} dias
                       </span>
                     </div>
                   </div>

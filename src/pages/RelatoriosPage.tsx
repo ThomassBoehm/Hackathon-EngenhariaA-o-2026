@@ -44,10 +44,13 @@ export default function RelatoriosPage() {
   const totalLiquidado = obras.reduce((acc, o) => acc + (o.valor_total_liquidado || 0), 0)
   const totalSaldoRemanescente = Math.max(0, totalValor - totalLiquidado)
 
-  const prazoVencido = obras.filter((o) => o.status_classificacao === 'prazo_vencido')
-  const foraRitmo = obras.filter((o) => o.status_classificacao === 'fora_do_ritmo')
-  const noRitmo = obras.filter((o) => o.status_classificacao === 'no_ritmo')
-  const semDados = obras.filter((o) => o.status_classificacao === 'sem_dados')
+  // Status binário público
+  const dentroPrazo = obras.filter(
+    (o) => o.status_classificacao !== 'prazo_vencido' && o.status_classificacao !== 'fora_do_ritmo',
+  )
+  const foraRitmo = obras.filter(
+    (o) => o.status_classificacao === 'prazo_vencido' || o.status_classificacao === 'fora_do_ritmo',
+  )
 
   const obrasComInconsistencias = obras.filter((o) => o.tem_inconsistencias)
 
@@ -63,28 +66,30 @@ export default function RelatoriosPage() {
       'CNPJ',
       'Valor Global',
       'Valor Liquidado',
-      'Status Classificacao',
-      'Nivel de atencao',
+      'Status',
       'Dias Sem Liquidacao',
       'Problemas',
     ]
 
-    const rows = obras.map((o) => [
-      `"${o.numero_contrato}"`,
-      `"${o.processo_adm || ''}"`,
-      `"${o.titulo.replace(/"/g, '""')}"`,
-      `"${o.orgao}"`,
-      `"${o.municipio || ''}"`,
-      `"${o.tipo_obra || ''}"`,
-      `"${o.contratada_nome.replace(/"/g, '""')}"`,
-      `"${o.contratada_cnpj || ''}"`,
-      o.valor_global_atual || o.valor_global_original || 0,
-      o.valor_total_liquidado || 0,
-      `"${o.status_classificacao}"`,
-      o.gravidade_score || 0,
-      o.dias_sem_liquidacao || 0,
-      o.tem_inconsistencias ? 'SIM' : 'NAO',
-    ])
+    const rows = obras.map((o) => {
+      const isFora =
+        o.status_classificacao === 'prazo_vencido' || o.status_classificacao === 'fora_do_ritmo'
+      return [
+        `"${o.numero_contrato}"`,
+        `"${o.processo_adm || ''}"`,
+        `"${o.titulo.replace(/"/g, '""')}"`,
+        `"${o.orgao}"`,
+        `"${o.municipio || ''}"`,
+        `"${o.tipo_obra || ''}"`,
+        `"${o.contratada_nome.replace(/"/g, '""')}"`,
+        `"${o.contratada_cnpj || ''}"`,
+        o.valor_global_atual || o.valor_global_original || 0,
+        o.valor_total_liquidado || 0,
+        `"${isFora ? 'Fora do ritmo' : 'Dentro do prazo'}"`,
+        o.dias_sem_liquidacao || 0,
+        o.tem_inconsistencias ? 'SIM' : 'NAO',
+      ]
+    })
 
     const csvContent =
       'data:text/csv;charset=utf-8,\uFEFF' +
@@ -190,14 +195,12 @@ export default function RelatoriosPage() {
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-bold uppercase">
-              Contratos em Alerta de Mora
+              Contratos Fora do Ritmo
             </CardDescription>
-            <CardTitle className="text-xl font-black text-red-600">
-              {prazoVencido.length + foraRitmo.length}
-            </CardTitle>
+            <CardTitle className="text-xl font-black text-amber-600">{foraRitmo.length}</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-slate-500">
-            {prazoVencido.length} vencidos e {foraRitmo.length} fora do ritmo
+            {dentroPrazo.length} dentro do prazo
           </CardContent>
         </Card>
       </div>
@@ -209,8 +212,8 @@ export default function RelatoriosPage() {
             Mapa da carteira de contratos de obras
           </CardTitle>
           <CardDescription className="text-xs">
-            Visão consolidada com as regras do contrato, nível de atenção (G) e situação
-            física-financeira.
+            Visão consolidada com as regras do contrato, status (dentro do prazo / fora do ritmo) e
+            situação física-financeira.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -224,8 +227,7 @@ export default function RelatoriosPage() {
                   <th className="p-3">Liquidado</th>
                   <th className="p-3">Periodicidade</th>
                   <th className="p-3">Dias s/ Liq</th>
-                  <th className="p-3">Nível de atenção</th>
-                  <th className="p-3">Estado SIGO</th>
+                  <th className="p-3">Status</th>
                   <th className="p-3">Problemas</th>
                 </tr>
               </thead>{' '}
@@ -265,21 +267,6 @@ export default function RelatoriosPage() {
                         </span>
                       </td>
                       <td className="p-3 font-bold font-mono">{obra.dias_sem_liquidacao || 0}d</td>
-                      <td className="p-3 font-mono font-black text-sm">
-                        <span
-                          className={
-                            obra.gravidade_score > 10
-                              ? 'text-red-600'
-                              : obra.gravidade_score > 3
-                                ? 'text-amber-600'
-                                : obra.gravidade_score > 0
-                                  ? 'text-blue-600'
-                                  : 'text-slate-400'
-                          }
-                        >
-                          {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '—'}
-                        </span>
-                      </td>
                       <td className="p-3">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg}`}

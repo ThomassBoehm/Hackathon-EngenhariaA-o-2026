@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
-  HelpCircle,
   UploadCloud,
   Search,
   ArrowUpDown,
@@ -44,8 +43,8 @@ export default function Dashboard() {
   const [filtroOrgao, setFiltroOrgao] = useState<string>('todos')
   const [filtroInconsistencia, setFiltroInconsistencia] = useState<string>('todos')
   const [ordenacao, setOrdenacao] = useState<
-    'gravidade' | 'valor_desc' | 'valor_asc' | 'recente' | 'dias_liq'
-  >('gravidade')
+    'status' | 'valor_desc' | 'valor_asc' | 'recente' | 'dias_liq'
+  >('status')
 
   useEffect(() => {
     loadData()
@@ -71,11 +70,13 @@ export default function Dashboard() {
     }
   }
 
-  // Métricas de Resumo
-  const prazoVencido = obras.filter((o) => o.status_classificacao === 'prazo_vencido')
-  const foraRitmo = obras.filter((o) => o.status_classificacao === 'fora_do_ritmo')
-  const noRitmo = obras.filter((o) => o.status_classificacao === 'no_ritmo')
-  const semDados = obras.filter((o) => o.status_classificacao === 'sem_dados')
+  // Métricas de Resumo (status binário público)
+  const dentroPrazo = obras.filter(
+    (o) => o.status_classificacao !== 'prazo_vencido' && o.status_classificacao !== 'fora_do_ritmo',
+  )
+  const foraRitmo = obras.filter(
+    (o) => o.status_classificacao === 'prazo_vencido' || o.status_classificacao === 'fora_do_ritmo',
+  )
 
   const valorTotalCarteira = obras.reduce(
     (acc, o) => acc + (o.valor_global_atual || o.valor_global_original || 0),
@@ -103,8 +104,13 @@ export default function Dashboard() {
       (obra.municipio && obra.municipio.toLowerCase().includes(buscaTexto.toLowerCase())) ||
       obra.objeto.toLowerCase().includes(buscaTexto.toLowerCase())
 
-    // Status
-    const matchStatus = filtroStatus === 'todos' || obra.status_classificacao === filtroStatus
+    // Status binário público
+    const isFora =
+      obra.status_classificacao === 'prazo_vencido' || obra.status_classificacao === 'fora_do_ritmo'
+    const matchStatus =
+      filtroStatus === 'todos' ||
+      (filtroStatus === 'fora_do_ritmo' && isFora) ||
+      (filtroStatus === 'dentro_do_prazo' && !isFora)
 
     // Tipo
     const matchTipo = filtroTipo === 'todos' || obra.tipo_obra === filtroTipo
@@ -123,8 +129,13 @@ export default function Dashboard() {
 
   // Ordenação
   const obrasOrdenadas = [...obrasFiltradas].sort((a, b) => {
-    if (ordenacao === 'gravidade') {
-      return (b.gravidade_score || 0) - (a.gravidade_score || 0)
+    if (ordenacao === 'status') {
+      // Fora do ritmo primeiro
+      const aFora =
+        a.status_classificacao === 'prazo_vencido' || a.status_classificacao === 'fora_do_ritmo'
+      const bFora =
+        b.status_classificacao === 'prazo_vencido' || b.status_classificacao === 'fora_do_ritmo'
+      return Number(bFora) - Number(aFora)
     }
     if (ordenacao === 'valor_desc') {
       return (
@@ -153,7 +164,7 @@ export default function Dashboard() {
     setFiltroTipo('todos')
     setFiltroOrgao('todos')
     setFiltroInconsistencia('todos')
-    setOrdenacao('gravidade')
+    setOrdenacao('status')
   }
 
   return (
@@ -164,14 +175,14 @@ export default function Dashboard() {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30">
               <Sparkles className="h-3.5 w-3.5 text-blue-400" />
-              Obras que precisam de atenção
+              Painel de fiscalização de obras
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Onde o fiscal deve olhar primeiro.
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              O SIGO lê contratos públicos, monitora pagamentos e classifica as obras por nível de
-              atenção.
+              O SIGO lê contratos públicos, monitora pagamentos e mostra quais obras estão dentro do
+              prazo e quais saíram do ritmo de execução.
             </p>
           </div>
 
@@ -189,16 +200,16 @@ export default function Dashboard() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
       </div>
 
-      {/* 4 Cards de Estado - Conforme Item 5 e 9 do PDF */}
+      {/* Cards de Status Binário */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Layers className="h-5 w-5 text-blue-700" />
-              Classificação da Carteira de Contratos
+              Status da Carteira de Contratos
             </h2>
             <p className="text-xs text-slate-500">
-              Clique no cartão para filtrar a lista abaixo por estado contratual
+              Clique no cartão para filtrar a lista abaixo por status
             </p>
           </div>
           {filtroStatus !== 'todos' && (
@@ -213,33 +224,33 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Prazo Vencido (Vermelho) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Card 1: Dentro do Prazo (Verde) */}
           <button
             onClick={() =>
-              setFiltroStatus(filtroStatus === 'prazo_vencido' ? 'todos' : 'prazo_vencido')
+              setFiltroStatus(filtroStatus === 'dentro_do_prazo' ? 'todos' : 'dentro_do_prazo')
             }
             className={`text-left transition-all p-5 rounded-xl border bg-white dark:bg-slate-900 shadow-sm hover:shadow-md relative overflow-hidden ${
-              filtroStatus === 'prazo_vencido'
-                ? 'ring-2 ring-red-500 border-red-500 bg-red-50/20 dark:bg-red-950/20'
-                : 'border-slate-200 dark:border-slate-800 hover:border-red-300'
+              filtroStatus === 'dentro_do_prazo'
+                ? 'ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300'
             }`}
           >
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-red-500" />
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-500" />
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-red-700 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                Prazo Vencido
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Dentro do prazo
               </span>
-              <span className="text-2xl font-black text-red-600 dark:text-red-400">
-                {loading ? '-' : prazoVencido.length}
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                {loading ? '-' : dentroPrazo.length}
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              Passou ciclo + carência (15d) ou marco datado vencido.
+              Dentro do ciclo pactuado e da carência de trâmite da obra.
             </p>
-            <div className="mt-3 text-[11px] text-red-800 dark:text-red-300 font-semibold bg-red-100/70 dark:bg-red-950/60 px-2 py-1 rounded inline-block">
-              {obrasComMarcoVencido} com marco vencido
+            <div className="mt-3 text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-1 rounded inline-block">
+              Liquidação regular
             </div>
           </button>
 
@@ -258,71 +269,17 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-amber-600" />
-                Fora do Ritmo
+                Fora do ritmo
               </span>
               <span className="text-2xl font-black text-amber-600 dark:text-amber-400">
                 {loading ? '-' : foraRitmo.length}
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              Na carência · ou descompasso ≥ 20 p.p. de execução.
+              A obra ultrapassou sua própria carência de trâmite de liquidação.
             </p>
             <div className="mt-3 text-[11px] text-amber-800 dark:text-amber-300 font-semibold bg-amber-100/70 dark:bg-amber-950/60 px-2 py-1 rounded inline-block">
-              Alerta prévio de mora
-            </div>
-          </button>
-
-          {/* Card 3: No Ritmo (Verde) */}
-          <button
-            onClick={() => setFiltroStatus(filtroStatus === 'no_ritmo' ? 'todos' : 'no_ritmo')}
-            className={`text-left transition-all p-5 rounded-xl border bg-white dark:bg-slate-900 shadow-sm hover:shadow-md relative overflow-hidden ${
-              filtroStatus === 'no_ritmo'
-                ? 'ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
-                : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300'
-            }`}
-          >
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-500" />
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                No Ritmo Previsto
-              </span>
-              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                {loading ? '-' : noRitmo.length}
-              </span>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              Dentro do ciclo pactuado e cronograma compatível.
-            </p>
-            <div className="mt-3 text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-1 rounded inline-block">
-              Liquidação regular
-            </div>
-          </button>
-
-          {/* Card 4: Sem Dados (Cinza/Neutro) */}
-          <button
-            onClick={() => setFiltroStatus(filtroStatus === 'sem_dados' ? 'todos' : 'sem_dados')}
-            className={`text-left transition-all p-5 rounded-xl border bg-white dark:bg-slate-900 shadow-sm hover:shadow-md relative overflow-hidden ${
-              filtroStatus === 'sem_dados'
-                ? 'ring-2 ring-slate-500 border-slate-500 bg-slate-50 dark:bg-slate-800'
-                : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
-            }`}
-          >
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-400" />
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <HelpCircle className="h-4 w-4 text-slate-500" />
-                Sem Dados Execução
-              </span>
-              <span className="text-2xl font-black text-slate-600 dark:text-slate-400">
-                {loading ? '-' : semDados.length}
-              </span>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              Sem data definida. Fora da lista de atenção.
-            </p>
-            <div className="mt-3 text-[11px] text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded inline-block">
-              Sinaliza sem acusar
+              {obrasComMarcoVencido} com marco vencido
             </div>
           </button>
         </div>
@@ -396,10 +353,7 @@ export default function Dashboard() {
               Carteira de Obras e Contratos Públicos
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Filtros e ordenação por nível de atenção{' '}
-              <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-blue-700 dark:text-blue-300">
-                G = A × log₁₀(V) × S
-              </code>
+              Filtros e ordenação por status da obra (dentro do prazo / fora do ritmo)
             </p>
           </div>
 
@@ -432,7 +386,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gravidade">Maior atenção</SelectItem>
+                    <SelectItem value="status">Fora do ritmo primeiro</SelectItem>
                     <SelectItem value="dias_liq">Mais Dias sem Liquidação</SelectItem>
                     <SelectItem value="valor_desc">Maior Valor Global</SelectItem>
                     <SelectItem value="valor_asc">Menor Valor Global</SelectItem>
@@ -447,18 +401,16 @@ export default function Dashboard() {
               {/* Status */}
               <div>
                 <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                  Estado Contratual
+                  Status
                 </label>
                 <Select value={filtroStatus} onValueChange={setFiltroStatus}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todos">Todos os Estados</SelectItem>
-                    <SelectItem value="prazo_vencido">Prazo Vencido</SelectItem>
-                    <SelectItem value="fora_do_ritmo">Fora do Ritmo</SelectItem>
-                    <SelectItem value="no_ritmo">No Ritmo Previsto</SelectItem>
-                    <SelectItem value="sem_dados">Sem Dados de Execução</SelectItem>
+                    <SelectItem value="todos">Todos os status</SelectItem>
+                    <SelectItem value="dentro_do_prazo">Dentro do prazo</SelectItem>
+                    <SelectItem value="fora_do_ritmo">Fora do ritmo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -630,7 +582,7 @@ export default function Dashboard() {
                       ) : null}
                     </div>
 
-                    {/* Detalhes Financeiros e Gravidade */}
+                    {/* Detalhes Financeiros */}
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg space-y-2 border border-slate-100 dark:border-slate-800">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500 font-medium">Valor Atual:</span>
@@ -650,20 +602,10 @@ export default function Dashboard() {
 
                       <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
                         <span className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
-                          Nível de atenção:
+                          Carência de trâmite:
                         </span>
-                        <span
-                          className={`font-mono font-black text-sm ${
-                            obra.gravidade_score > 10
-                              ? 'text-red-600'
-                              : obra.gravidade_score > 3
-                                ? 'text-amber-600'
-                                : obra.gravidade_score > 0
-                                  ? 'text-blue-600'
-                                  : 'text-slate-400'
-                          }`}
-                        >
-                          {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '0,00'}
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {obra.carencia_dias || 15} dias
                         </span>
                       </div>
                     </div>

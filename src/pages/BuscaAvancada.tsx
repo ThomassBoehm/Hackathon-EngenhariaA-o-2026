@@ -163,18 +163,16 @@ export default function BuscaAvancada() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 text-xs">
             <div>
               <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                Estado do Contrato
+                Status
               </label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos os Estados</SelectItem>
-                  <SelectItem value="prazo_vencido">Prazo Vencido</SelectItem>
-                  <SelectItem value="fora_do_ritmo">Fora do Ritmo</SelectItem>
-                  <SelectItem value="no_ritmo">No Ritmo</SelectItem>
-                  <SelectItem value="sem_dados">Sem Dados</SelectItem>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="dentro_do_prazo">Dentro do prazo</SelectItem>
+                  <SelectItem value="fora_do_ritmo">Fora do ritmo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -396,14 +394,6 @@ export default function BuscaAvancada() {
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                        Nível de atenção
-                      </span>
-                      <span className="text-lg font-black text-slate-800 dark:text-slate-200">
-                        {obra.gravidade_score > 0 ? obra.gravidade_score.toFixed(2) : '—'}
-                      </span>
-                    </div>
                     <Link to={`/obras/${obra.id}`}>
                       <Button
                         size="sm"

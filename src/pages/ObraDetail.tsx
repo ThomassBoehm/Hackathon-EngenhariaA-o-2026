@@ -364,7 +364,7 @@ export default function ObraDetail() {
             </div>
 
             <CardTitle className="text-lg font-bold text-slate-900 dark:text-white pt-2">
-              Alerta do sistema: O que o SIGO detectou
+              Status do sistema: o que o SIGO detectou
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-xs">
@@ -374,13 +374,9 @@ export default function ObraDetail() {
                 <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-sm text-white mb-1">
-                    {obra.status_classificacao === 'prazo_vencido'
-                      ? 'Situação que pode exigir abertura de processo'
-                      : obra.status_classificacao === 'fora_do_ritmo'
-                        ? 'Alerta de atraso no ritmo da obra'
-                        : obra.status_classificacao === 'no_ritmo'
-                          ? 'Execução dentro do combinado'
-                          : 'Contrato sinalizado para validar regras do contrato'}
+                    {badgeInfo.label === 'Fora do ritmo'
+                      ? 'Obra fora do ritmo de execução'
+                      : 'Execução dentro do prazo'}
                   </h4>
                   <p className="text-slate-300 leading-relaxed">
                     {obra.resumo_motivo_status ||
