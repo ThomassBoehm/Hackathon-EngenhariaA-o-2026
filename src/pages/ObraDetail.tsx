@@ -440,7 +440,7 @@ export default function ObraDetail() {
 
       {/* Tabs com os Detalhes da Auditoria */}
       <Tabs defaultValue="obrigacoes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto p-1 bg-slate-100 dark:bg-slate-800">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-slate-100 dark:bg-slate-800">
           <TabsTrigger value="obrigacoes" className="text-xs py-2 font-semibold">
             <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
             O que o contrato promete ({obrigacoes.length})
@@ -459,10 +459,6 @@ export default function ObraDetail() {
           <TabsTrigger value="liquidacoes" className="text-xs py-2 font-semibold">
             <DollarSign className="h-3.5 w-3.5 mr-1.5" />
             Liquidações Financeiras ({liquidacoes.length})
-          </TabsTrigger>
-          <TabsTrigger value="contrato_ia" className="text-xs py-2 font-semibold">
-            <Sparkles className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
-            Dados extraídos do contrato
           </TabsTrigger>
         </TabsList>
 
@@ -898,69 +894,6 @@ export default function ObraDetail() {
               </table>
             </div>
           )}
-        </TabsContent>
-
-        {/* TAB 5: Extração com IA & Metadados do PDF */}
-        <TabsContent value="contrato_ia" className="space-y-4 pt-4">
-          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-base font-bold">Dados extraídos do contrato</CardTitle>
-              </div>
-              <CardDescription className="text-xs">
-                Usamos um modelo de linguagem apenas para converter o texto jurídico em campos
-                preenchidos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                    Modelo de Extração
-                  </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {obra.extracao_ia_raw?.modelo || 'Skip AI PDF Extractor'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                    Páginas Processadas
-                  </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {obra.extracao_ia_raw?.paginas_lidas || 1} páginas
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                    Tempo de Leitura
-                  </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {obra.extracao_ia_raw?.tempo_processamento || '1.2s'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                    Confiança Global
-                  </span>
-                  <span className="font-semibold text-emerald-600">
-                    {((obra.extracao_ia_raw?.confianca_geral || 0.95) * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-
-              {obra.extracao_ia_raw?.texto_destaque && (
-                <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-900 text-blue-950 dark:text-blue-200">
-                  <span className="font-bold block mb-1">Destaque de IA Identificado:</span>
-                  <p className="italic">"{obra.extracao_ia_raw.texto_destaque}"</p>
-                </div>
-              )}
-
-              <div className="p-4 bg-slate-900 text-slate-200 rounded-xl font-mono text-[11px] overflow-x-auto">
-                <pre>{JSON.stringify(obra.extracao_ia_raw || {}, null, 2)}</pre>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 
