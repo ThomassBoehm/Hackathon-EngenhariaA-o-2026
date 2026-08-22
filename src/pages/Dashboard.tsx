@@ -203,6 +203,20 @@ export default function Dashboard() {
                 Extrair Novo Contrato (PDF)
               </Button>
             </Link>
+            <Button
+              asChild
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold"
+            >
+              <a
+                href="https://pncp.gov.br/app/contratos?pagina=1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Baixar Contratos Públicos
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </a>
+            </Button>
           </div>
         </div>
 
