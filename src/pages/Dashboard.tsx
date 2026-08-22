@@ -185,14 +185,15 @@ export default function Dashboard() {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30">
               <Sparkles className="h-3.5 w-3.5 text-blue-400" />
-              Painel de fiscalização de obras
+              Como funciona
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Onde o fiscal deve olhar primeiro.
+              Acompanhe as obras da sua cidade em 2 passos
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              O SIGO lê contratos públicos, monitora pagamentos e mostra quais obras estão dentro do
-              prazo e quais saíram do ritmo de execução.
+              ① Baixe o contrato no Portal Nacional de Contratações Públicas (PNCP) → ② Faça o
+              upload aqui. O SIGO extrai os dados automaticamente e mostra se a obra está dentro do
+              prazo ou fora do ritmo.
             </p>
           </div>
 
