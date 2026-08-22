@@ -24,6 +24,36 @@ import { toast } from '@/hooks/use-toast'
  * para o valor de schema mais próximo, preservando o titulo/descricao
  * para diferenciação visual na tela de detalhe.
  */
+/** Marcador exibido quando o dado NÃO consta no contrato. Nunca é um valor plausível. */
+export const NAO_IDENTIFICADO = 'Não identificado no contrato'
+
+/**
+ * O PocketBase exige numero_contrato, titulo, objeto, orgao, contratada_nome,
+ * valor_global_original e valor_global_atual. Quando a extração não encontra o dado,
+ * gravamos um marcador explícito em vez de inventar — e registramos a lacuna
+ * em campos_nao_identificados para a interface poder mostrar.
+ */
+function preencherObrigatorios(obra: Record<string, any>) {
+  const lacunas: string[] = []
+  const textoObrig = ['numero_contrato', 'titulo', 'objeto', 'orgao', 'contratada_nome']
+  for (const campo of textoObrig) {
+    const v = obra[campo]
+    if (v === undefined || v === null || String(v).trim() === '') {
+      obra[campo] = NAO_IDENTIFICADO
+      lacunas.push(campo)
+    }
+  }
+  for (const campo of ['valor_global_original', 'valor_global_atual']) {
+    const v = obra[campo]
+    if (v === undefined || v === null || isNaN(Number(v))) {
+      obra[campo] = 0
+      if (!lacunas.includes('valor_global')) lacunas.push('valor_global')
+    }
+  }
+  obra.campos_nao_identificados = lacunas
+  return { obra, lacunas }
+}
+
 function normalizarTipoChecagem(tipo: string): TipoChecagemInconsistencia {
   const TIPOS_VALIDOS: TipoChecagemInconsistencia[] = [
     'clausula_inexistente',
@@ -482,6 +512,14 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de [X]% sobre o saldo reman
     setProcessStep('Calculando o status da obra...')
 
     const resumoCidadao = gerarResumoCidadao(extracaoFinal.obra)
+
+    const { lacunas } = preencherObrigatorios(extracaoFinal.obra)
+    if (lacunas.length > 0) {
+      toast({
+        title: 'Dados ausentes no contrato',
+        description: `Não foi possível localizar no texto: ${lacunas.join(', ')}. Os campos ficam marcados como não identificados — o SIGO não preenche por estimativa.`,
+      })
+    }
 
     const novaObra: Partial<ObraRecord> = {
       ...extracaoFinal.obra,
