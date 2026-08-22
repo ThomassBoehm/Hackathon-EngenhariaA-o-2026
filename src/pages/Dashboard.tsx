@@ -13,7 +13,7 @@ import {
   Eye,
   Trash2,
   Edit,
-  ShieldAlert,
+  HelpCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -72,11 +72,15 @@ export default function Dashboard() {
 
   // Métricas de Resumo (status binário público)
   const dentroPrazo = obras.filter(
-    (o) => o.status_classificacao !== 'prazo_vencido' && o.status_classificacao !== 'fora_do_ritmo',
+    (o) =>
+      o.status_classificacao !== 'prazo_vencido' &&
+      o.status_classificacao !== 'fora_do_ritmo' &&
+      o.status_classificacao !== 'sem_dados',
   )
   const foraRitmo = obras.filter(
     (o) => o.status_classificacao === 'prazo_vencido' || o.status_classificacao === 'fora_do_ritmo',
   )
+  const semDadosPrazo = obras.filter((o) => o.status_classificacao === 'sem_dados')
 
   const valorTotalCarteira = obras.reduce(
     (acc, o) => acc + (o.valor_global_atual || o.valor_global_original || 0),
@@ -107,10 +111,12 @@ export default function Dashboard() {
     // Status binário público
     const isFora =
       obra.status_classificacao === 'prazo_vencido' || obra.status_classificacao === 'fora_do_ritmo'
+    const isSemDados = obra.status_classificacao === 'sem_dados'
     const matchStatus =
       filtroStatus === 'todos' ||
       (filtroStatus === 'fora_do_ritmo' && isFora) ||
-      (filtroStatus === 'dentro_do_prazo' && !isFora)
+      (filtroStatus === 'sem_dados_prazo' && isSemDados) ||
+      (filtroStatus === 'dentro_do_prazo' && !isFora && !isSemDados)
 
     // Tipo
     const matchTipo = filtroTipo === 'todos' || obra.tipo_obra === filtroTipo
@@ -130,12 +136,14 @@ export default function Dashboard() {
   // Ordenação
   const obrasOrdenadas = [...obrasFiltradas].sort((a, b) => {
     if (ordenacao === 'status') {
-      // Fora do ritmo primeiro
-      const aFora =
-        a.status_classificacao === 'prazo_vencido' || a.status_classificacao === 'fora_do_ritmo'
-      const bFora =
-        b.status_classificacao === 'prazo_vencido' || b.status_classificacao === 'fora_do_ritmo'
-      return Number(bFora) - Number(aFora)
+      // Fora do ritmo primeiro, depois sem informações de prazo, depois dentro do prazo
+      const rankStatus = (o: ObraRecord) => {
+        const s = o.status_classificacao
+        if (s === 'prazo_vencido' || s === 'fora_do_ritmo') return 3
+        if (s === 'sem_dados') return 2
+        return 1
+      }
+      return rankStatus(b) - rankStatus(a)
     }
     if (ordenacao === 'valor_desc') {
       return (
@@ -224,7 +232,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Card 1: Dentro do Prazo (Verde) */}
           <button
             onClick={() =>
@@ -282,11 +290,40 @@ export default function Dashboard() {
               {obrasComMarcoVencido} com marco vencido
             </div>
           </button>
+
+          {/* Card 3: Sem informações de prazo (Cinza) */}
+          <button
+            onClick={() =>
+              setFiltroStatus(filtroStatus === 'sem_dados_prazo' ? 'todos' : 'sem_dados_prazo')
+            }
+            className={`text-left transition-all p-5 rounded-xl border bg-white dark:bg-slate-900 shadow-sm hover:shadow-md relative overflow-hidden ${
+              filtroStatus === 'sem_dados_prazo'
+                ? 'ring-2 ring-slate-400 border-slate-400 bg-slate-50/40 dark:bg-slate-800/20'
+                : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-400" />
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <HelpCircle className="h-4 w-4 text-slate-500" />
+                Sem informações de prazo
+              </span>
+              <span className="text-2xl font-black text-slate-500 dark:text-slate-400">
+                {loading ? '-' : semDadosPrazo.length}
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+              Não foi possível identificar prazos ou periodicidade de execução neste contrato.
+            </p>
+            <div className="mt-3 text-[11px] text-slate-600 dark:text-slate-400 font-semibold bg-slate-100 dark:bg-slate-800/60 px-2 py-1 rounded inline-block">
+              Sem âncora temporal
+            </div>
+          </button>
         </div>
       </div>
 
       {/* Resumo Financeiro e Indicadores de Risco */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs uppercase font-bold text-slate-500">
@@ -321,24 +358,6 @@ export default function Dashboard() {
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Divergências de número/extenso, referências a cláusulas inexistentes e limites de
               aditivos incompatíveis.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase font-bold text-slate-500">
-              Carência de Trâmite Fixa
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-blue-600" />
-              15 Dias Padrão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Aplica-se unicamente ao silêncio financeiro de liquidação. Marcos contratuais não
-              recebem carência.
             </p>
           </CardContent>
         </Card>
@@ -411,6 +430,7 @@ export default function Dashboard() {
                     <SelectItem value="todos">Todos os status</SelectItem>
                     <SelectItem value="dentro_do_prazo">Dentro do prazo</SelectItem>
                     <SelectItem value="fora_do_ritmo">Fora do ritmo</SelectItem>
+                    <SelectItem value="sem_dados_prazo">Sem informações de prazo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

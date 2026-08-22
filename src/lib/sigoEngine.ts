@@ -714,16 +714,19 @@ export function formatarData(dataIso?: string | null): string {
 /**
  * Status binário de apresentação pública do SIGO.
  * A UI não expõe mais "Nível de atenção" nem os 4 estados internos — apenas
- * dois rótulos: "Dentro do prazo" (verde) e "Fora do ritmo" (âmbar/laranja).
+ * três rótulos: "Dentro do prazo" (verde), "Fora do ritmo" (âmbar/laranja)
+ * e "Sem informações de prazo" (cinza/neutro).
  *
  * O cálculo é individual por obra: "Fora do ritmo" significa que a obra
  * ultrapassou sua própria carência de trâmite (prazo_vencido) ou já saiu do
- * ciclo pactuado (fora_do_ritmo). Obras sem dados de execução são tratadas
- * como "Dentro do prazo" (não há o que sinalizar).
+ * ciclo pactuado (fora_do_ritmo). Obras sem dados de execução (sem âncora
+ * temporal ou periodicidade identificável) são exibidas como
+ * "Sem informações de prazo".
  */
-export type StatusBinario = 'dentro_do_prazo' | 'fora_do_ritmo'
+export type StatusBinario = 'dentro_do_prazo' | 'fora_do_ritmo' | 'sem_dados_prazo'
 
 export function getStatusBinario(status: StatusClassificacao): StatusBinario {
+  if (status === 'sem_dados') return 'sem_dados_prazo'
   if (status === 'prazo_vencido' || status === 'fora_do_ritmo') return 'fora_do_ritmo'
   return 'dentro_do_prazo'
 }
@@ -738,6 +741,14 @@ export function getStatusBadgeInfo(status: StatusClassificacao) {
         dot: 'bg-amber-500',
         cardBorder: 'border-l-4 border-l-amber-500 hover:border-amber-500',
         badgeColor: 'warning',
+      }
+    case 'sem_dados_prazo':
+      return {
+        label: 'Sem informações de prazo',
+        bg: 'bg-slate-400/15 text-slate-600 border-slate-300 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700',
+        dot: 'bg-slate-400',
+        cardBorder: 'border-l-4 border-l-slate-400 hover:border-slate-400',
+        badgeColor: 'secondary',
       }
     case 'dentro_do_prazo':
     default:
