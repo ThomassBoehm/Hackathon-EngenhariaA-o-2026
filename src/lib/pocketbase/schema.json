@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T16:41:25.070Z",
+  "generatedAt": "2026-08-22T16:45:51.668Z",
   "collections": [
     {
       "name": "users",
@@ -116,11 +116,7 @@
             "Saúde/UBS",
             "Educação/Escolas",
             "Serviço Continuado",
-            "Aquisição/Outro",
-            "Infraestrutura Urbana e Mobilidade",
-            "Saneamento Básico e Recursos Hídricos",
-            "Edificações Públicas (Infraestrutura Social)",
-            "Infraestrutura de Energia e Telecomunicações"
+            "Aquisição/Outro"
           ]
         },
         {
@@ -488,7 +484,8 @@
             "divergencia_aritmetica",
             "identificador_conflitante",
             "prazo_incoerente",
-            "valor_sem_extenso"
+            "valor_sem_extenso",
+            "valor_extenso_ausente"
           ]
         },
         {
