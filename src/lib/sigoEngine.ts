@@ -109,7 +109,16 @@ export function calcularClassificacao(params: CalculoClassificacaoParams): Resul
 
 /**
  * 7. Verificação de Coerência (sem IA)
- * Executa as 4 checagens determinísticas de texto
+ * Executa checagens determinísticas de texto sobre o contrato.
+ *
+ * Observação de compatibilidade: o schema da collection `inconsistencias`
+ * no PocketBase só possui 4 valores de `tipo_checagem`
+ * (clausula_inexistente, extenso_divergente, divergencia_aritmetica,
+ * identificador_conflitante). As novas checagens (prazo incoerente e
+ * valor por extenso ausente/incorreto) usam tipos próprios aqui na
+ * camada TS, e o mapeamento de persistência em ContratoUpload recai
+ * nos valores válidos do schema, preservando titulo/descricao para
+ * diferenciação visual.
  */
 export interface InconsistenciaDetectada {
   tipo:
@@ -117,6 +126,8 @@ export interface InconsistenciaDetectada {
     | 'extenso_divergente'
     | 'divergencia_aritmetica'
     | 'identificador_conflitante'
+    | 'prazo_incoerente'
+    | 'valor_extenso_ausente'
   titulo: string
   descricao: string
   localizacao?: string
@@ -125,46 +136,12 @@ export interface InconsistenciaDetectada {
   esperado?: string
 }
 
-export function executarChecagensCoerencia(
-  textoContrato: string,
-  metadados?: { valorGlobal?: number; garantiaPct?: number },
-): InconsistenciaDetectada[] {
-  const inconsistencias: InconsistenciaDetectada[] = []
-
-  if (!textoContrato || textoContrato.trim().length === 0) {
-    return inconsistencias
-  }
-
-  // 1. Referência a cláusula inexistente
-  // Procura referências como "cláusula 14.8", "item 14.8", "item 9.1.1.d"
-  const refMatches = textoContrato.matchAll(
-    /(?:cl[áa]usula|item|se[çc][ãa]o|anexo|subitem)\s+([0-9]+(?:\.[0-9]+)+[a-z]?)/gi,
-  )
-
-  for (const match of refMatches) {
-    const num = match[1]
-    // Se cita um item como 14.8 e o texto não tem definição estruturada dessa cláusula
-    if (
-      num.startsWith('14.') &&
-      !textoContrato.includes('14.8 -') &&
-      !textoContrato.includes('14.8.') &&
-      !textoContrato.includes('14.8 ')
-    ) {
-      inconsistencias.push({
-        tipo: 'clausula_inexistente',
-        titulo: 'Referência a Cláusula Inexistente',
-        descricao: `O texto remete ao item ${num}, mas essa subdivisão não consta no rol de cláusulas do instrumento.`,
-        localizacao: match[0],
-        trechoOriginal: match[0],
-        encontrado: `item ${num}`,
-        esperado: 'Cláusula de Sanções Válida',
-      })
-      break
-    }
-  }
-
-  // 2. Extenso divergente do algarismo
-  const dicionarioNumeros: Record<string, number> = {
+/**
+ * Dicionário de números cardinais por extenso de 1 a 100.
+ * Inclui variantes ortográficas comuns (quatorze/catorze, três/tres).
+ */
+function montarDicionarioExtenso(): Record<string, number> {
+  const unidades: Record<string, number> = {
     um: 1,
     dois: 2,
     três: 3,
@@ -190,65 +167,627 @@ export function executarChecagensCoerencia(
     trinta: 30,
     quarenta: 40,
     cinquenta: 50,
+    sessenta: 60,
+    setenta: 70,
+    oitenta: 80,
+    noventa: 90,
+    cem: 100,
+    cento: 100,
+  }
+  const compostos: Record<string, number> = {}
+  // "vinte e um", "trinta e dois", ...
+  for (const dezena in unidades) {
+    const v = unidades[dezena]
+    if (v >= 20 && v <= 90) {
+      for (const u in unidades) {
+        const uv = unidades[u]
+        if (uv >= 1 && uv <= 9) {
+          compostos[`${dezena} e ${u}`] = v + uv
+        }
+      }
+    }
+  }
+  return { ...unidades, ...compostos }
+}
+
+/**
+ * Tenta converter uma string de extenso composto (ex.: "cento e quarenta e três")
+ * para número. Retorna undefined quando não consegue.
+ */
+function extensoParaNumero(texto: string, dict: Record<string, number>): number | undefined {
+  const t = texto
+    .toLowerCase()
+    .trim()
+    .replace(/[.,;:]/g, '')
+    .replace(/\s+/g, ' ')
+  if (dict[t] !== undefined) return dict[t]
+  // Tenta decompor compostos por "e" (ex.: "trinta e quatro")
+  const partes = t.split(/\s+e\s+/)
+  if (partes.length > 1) {
+    let total = 0
+    let valido = true
+    for (const p of partes) {
+      const v = dict[p.trim()]
+      if (v === undefined) {
+        valido = false
+        break
+      }
+      total += v
+    }
+    if (valido) return total
+  }
+  return undefined
+}
+
+/**
+ * Limpa uma string por extenso removendo qualificadores de moeda/quantidade
+ * ("reais", "por cento", "meses", "dias", "metros", etc.) para que a
+ * comparação algarismo vs extenso não falhe por ruído de contexto.
+ */
+function limparExtenso(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\(+/g, ' ')
+    .replace(/\)+/g, ' ')
+    .replace(/[.,;:]/g, ' ')
+    .replace(/\b(reais?|de\s+reais?|milhar(?:es)?|centavo[s]?|pontos?)\b/g, ' ')
+    .replace(/\b(por\s+cento|percentual|porcento)\b/g, ' ')
+    .replace(/\b(meses?|mês|mes|dias?|anos?|horas?|minutos?|segundos?)\b/g, ' ')
+    .replace(/\b(metros?|quilometros?|km|m|cm|mm)\b/g, ' ')
+    .replace(/\b(unidades?|moradias?|domicilios?|domicílios?|casas?|lotes?|salas?)\b/g, ' ')
+    .replace(/\bde\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Normaliza um valor numérico para comparação com tolerância de arredondamento
+ * (centavos). Ex.: 2734800 == "dois milhões setecentos e trinta e quatro mil
+ * e oitocentos".
+ */
+function numeroPorExtenso(valor: number): string | null {
+  // Suporte limitado a valores de moeda; foco em decomposição por classes
+  if (!isFinite(valor) || valor < 0) return null
+  const abs = Math.round(valor * 100) / 100
+  const partes: string[] = []
+  const classes: [number, string, string][] = [
+    [1_000_000_000, 'bilhão', 'bilhões'],
+    [1_000_000, 'milhão', 'milhões'],
+    [1_000, 'mil', 'mil'],
+  ]
+  let resto = abs
+  for (const [div, singular, plural] of classes) {
+    const n = Math.floor(resto / div)
+    if (n > 0) {
+      if (n === 1) {
+        partes.push(`um ${singular}`)
+      } else {
+        partes.push(`${extensoSimples(n)} ${plural}`)
+      }
+      resto -= n * div
+    }
+  }
+  if (resto > 0) {
+    partes.push(extensoSimples(resto))
+  }
+  return partes.join(' e ')
+}
+
+function extensoSimples(n: number): string {
+  const unidades = [
+    '',
+    'um',
+    'dois',
+    'três',
+    'quatro',
+    'cinco',
+    'seis',
+    'sete',
+    'oito',
+    'nove',
+    'dez',
+    'onze',
+    'doze',
+    'treze',
+    'quatorze',
+    'quinze',
+    'dezesseis',
+    'dezessete',
+    'dezoito',
+    'dezenove',
+  ]
+  const dezenas = [
+    '',
+    '',
+    'vinte',
+    'trinta',
+    'quarenta',
+    'cinquenta',
+    'sessenta',
+    'setenta',
+    'oitenta',
+    'noventa',
+  ]
+  const centenas = [
+    '',
+    'cento',
+    'duzentos',
+    'trezentos',
+    'quatrocentos',
+    'quinhentos',
+    'seiscentos',
+    'setecentos',
+    'oitocentos',
+    'novecentos',
+  ]
+  const v = Math.floor(n)
+  if (v === 100) return 'cem'
+  const c = Math.floor(v / 100)
+  const d = Math.floor((v % 100) / 10)
+  const u = v % 10
+  const partes: string[] = []
+  if (c > 0) partes.push(centenas[c])
+  if (v % 100 >= 10 && v % 100 < 20) {
+    partes.push(unidades[v % 100])
+    return partes.join(' e ')
+  }
+  if (d > 0) partes.push(dezenas[d])
+  if (u > 0) partes.push(unidades[u])
+  return partes.join(' e ')
+}
+
+export function executarChecagensCoerencia(
+  textoContrato: string,
+  metadados?: { valorGlobal?: number; garantiaPct?: number },
+): InconsistenciaDetectada[] {
+  const inconsistencias: InconsistenciaDetectada[] = []
+
+  if (!textoContrato || textoContrato.trim().length === 0) {
+    return inconsistencias
   }
 
-  const regexExtenso = /([0-9]+)\s*\(([\w\sçãéíóú]+)\)/gi
+  const textoLow = textoContrato.toLowerCase()
+  const dicionario = montarDicionarioExtenso()
+
+  // ───────────────────────────────────────────────────────────────
+  // 1. Cláusula inexistente (generalizada)
+  //    Detecta qualquer referência a cláusula/item/seção/anexo/subitem
+  //    numerada (ex.: "14.8", "9.1.1.d") que NÃO aparece definida em
+  //    nenhuma parte do texto com os marcadores estruturais usuais.
+  // ───────────────────────────────────────────────────────────────
+  const refMatches = [
+    ...textoContrato.matchAll(
+      /(?:cl[áa]usula|item|se[çc][ãa]o|anexo|subitem|al[íi]nea|inciso)\s+([0-9]+(?:\.[0-9]+){0,3}[a-zA-Z]?)\b/gi,
+    ),
+  ]
+
+  // Identifica as definições estruturadas que existem no texto:
+  // padrões como "14.8 -", "14.8.", "Cláusula 14.8", "14.8)", etc.
+  const definicoes = new Set<string>()
+  const defMatches = [
+    ...textoContrato.matchAll(
+      /(?:cl[áa]usula\s+)?([0-9]+(?:\.[0-9]+){0,3}[a-zA-Z]?)\s*[-–.):]\s/gi,
+    ),
+  ]
+  for (const d of defMatches) {
+    definicoes.add(d[1].toLowerCase().replace(/\s+$/, ''))
+  }
+
+  const clausulasInexistentes = new Set<string>()
+  for (const match of refMatches) {
+    const num = match[1]
+      .toLowerCase()
+      .replace(/[.,;:]$/, '')
+      .trim()
+    // Ignora referências genéricas numéricas simples (ex.: "item 1") — só
+    // aponta subdivisões com ponto (ex.: "14.8", "9.1.1") ou letra.
+    const temSubdivisao = /\.[0-9]/.test(num) || /[a-z]$/.test(num)
+    if (!temSubdivisao) continue
+    if (definicoes.has(num)) continue
+    // Tolerância: se a referência for "14.8" e existe "14.8" como substring
+    // em outro lugar, também conta como definida.
+    if (
+      textoContrato.toLowerCase().includes(` ${num} `) ||
+      textoContrato.toLowerCase().includes(`${num} -`)
+    )
+      continue
+    if (clausulasInexistentes.has(num)) continue
+    clausulasInexistentes.add(num)
+    inconsistencias.push({
+      tipo: 'clausula_inexistente',
+      titulo: 'Referência a Cláusula/Item Inexistente',
+      descricao: `O texto remete a "${match[0].trim()}", porém a subdivisão ${num} não aparece definida em nenhuma seção do instrumento contratual.`,
+      localizacao: match[0].trim(),
+      trechoOriginal: match[0].trim(),
+      encontrado: `item ${num}`,
+      esperado: 'Subdivisão definida no rol de cláusulas',
+    })
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // 2. Extenso divergente do algarismo (generalizado p/ 1..100)
+  //    Detecta pares "N (extenso)" onde o extenso não bate com N.
+  // ───────────────────────────────────────────────────────────────
+  const regexExtenso = /([0-9]+)\s*\(([^()]+)\)/g
   let matchExt
   while ((matchExt = regexExtenso.exec(textoContrato)) !== null) {
     const numDigito = parseInt(matchExt[1], 10)
-    const extensoTexto = matchExt[2].trim().toLowerCase()
-    const valorEsperadoExtenso = dicionarioNumeros[extensoTexto]
+    const extensoBruto = matchExt[2].trim()
+    const extensoLimpo = limparExtenso(extensoBruto)
+    if (!extensoLimpo) continue
+
+    const valorEsperadoExtenso = extensoParaNumero(extensoLimpo, dicionario)
 
     if (valorEsperadoExtenso !== undefined && valorEsperadoExtenso !== numDigito) {
       inconsistencias.push({
         tipo: 'extenso_divergente',
         titulo: 'Divergência entre Número e Extenso',
-        descricao: `Identificada contradição: algarismo arábico "${numDigito}" difere do numeral por extenso "(${matchExt[2]})".`,
+        descricao: `Identificada contradição: o algarismo "${numDigito}" difere do numeral por extenso "(${extensoBruto})", que corresponde a ${valorEsperadoExtenso}.`,
         localizacao: matchExt[0],
         trechoOriginal: matchExt[0],
-        encontrado: `${numDigito} (${matchExt[2]})`,
-        esperado: `${numDigito} (${Object.keys(dicionarioNumeros).find((k) => dicionarioNumeros[k] === numDigito) || ''})`,
+        encontrado: `${numDigito} (${extensoBruto})`,
+        esperado: `${numDigito} (${numeroPorExtenso(numDigito) || ''})`,
       })
     }
   }
 
-  // 3. Aritmética e Limite Legal (ex: limite aditivo de 50% vs 25% da Lei 14.133 para nova obra)
+  // ───────────────────────────────────────────────────────────────
+  // 3. Divergência aritmética
+  //    3a. Limite aditivo de 50% sem hipótese excepcional (Lei 14.133/21)
+  //    3b. Soma de parcelas que não fecha com o valor global
+  //    3c. Percentuais que somam mais de 100%
+  // ───────────────────────────────────────────────────────────────
+
+  // 3a. Limite aditivo 50%
   if (
-    (textoContrato.includes('50%') ||
-      textoContrato.toLowerCase().includes('cinquenta por cento')) &&
-    (textoContrato.toLowerCase().includes('aditado') ||
-      textoContrato.toLowerCase().includes('aditivo'))
+    (textoContrato.includes('50%') || textoLow.includes('cinquenta por cento')) &&
+    (textoLow.includes('aditado') ||
+      textoLow.includes('aditivo') ||
+      textoLow.includes('aditamento'))
   ) {
+    // Recupera o trecho de referência ao aditivo de 50%
+    const trechoIdx = textoLow.search(/adit(?:ado|ivo|amento)/)
+    const trecho = trechoIdx >= 0 ? textoContrato.substring(trechoIdx, trechoIdx + 120) : ''
     inconsistencias.push({
       tipo: 'divergencia_aritmetica',
       titulo: 'Limite de Aditamento Incompatível com a Lei 14.133/21',
       descricao:
-        'Cláusula prevê permissivo de aditamento em até 50% sem caracterizar hipótese excepcional de reforma de edifício ou monumento.',
+        'Cláusula prevê permissivo de aditamento em até 50% sem caracterizar hipótese excepcional de reforma de edifício ou monumento, extrapolando o limite de 25% da Lei 14.133/21 para obras novas.',
       localizacao: 'Cláusula de Alterações e Aditivos',
-      trechoOriginal: 'aditado em até 50% (cinquenta por cento) do seu valor inicial atualizado',
+      trechoOriginal:
+        trecho || 'aditado em até 50% (cinquenta por cento) do seu valor inicial atualizado',
       encontrado: '50% (cinquenta por cento)',
       esperado: '25% (Art. 125 da Lei 14.133/21)',
     })
   }
 
-  // 4. Identificador conflitante (ex: dois números de pregão ou processo diferentes)
-  const pregaoMatches = [
-    ...textoContrato.matchAll(
-      /(?:preg[ãa]o\s+eletr[ôo]nico\s+(?:n[ºo°]?\s*)?)([0-9]+\/[0-9]{4})/gi,
-    ),
+  // 3b. Soma de parcelas vs valor global
+  // Tenta identificar "valor global" de referência no texto.
+  let valorGlobalDetectado: number | undefined
+  const mGlobal = textoContrato.match(
+    /valor\s+(?:global|total|contratual|do\s+contrato)[^R$]{0,40}R\$\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i,
+  )
+  if (mGlobal) {
+    valorGlobalDetectado = parseFloat(mGlobal[1].replace(/\./g, '').replace(',', '.'))
+  } else if (metadados?.valorGlobal && metadados.valorGlobal > 0) {
+    valorGlobalDetectado = metadados.valorGlobal
+  }
+
+  // Procura por listas de parcelas (ex.: "Parcela 1: R$ 100.000,00", "Parcela 2: R$ 150.000,00")
+  const regexListaParcelas =
+    /parcela\s+\d+[^R$]{0,30}R\$\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/gi
+  const parcelas: { valor: number; trecho: string }[] = []
+  let mPar
+  while ((mPar = regexListaParcelas.exec(textoContrato)) !== null) {
+    const raw = mPar[1].replace(/\./g, '').replace(',', '.')
+    const v = parseFloat(raw)
+    if (!isNaN(v)) parcelas.push({ valor: v, trecho: mPar[0] })
+  }
+
+  if (parcelas.length >= 2 && valorGlobalDetectado && valorGlobalDetectado > 0) {
+    const somaParcelas = parcelas.reduce((a, b) => a + b.valor, 0)
+    // Tolerância de 1% para arredondamentos
+    const diff = Math.abs(somaParcelas - valorGlobalDetectado)
+    const tol = valorGlobalDetectado * 0.01
+    if (diff > tol) {
+      const fmt = (n: number) =>
+        n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      inconsistencias.push({
+        tipo: 'divergencia_aritmetica',
+        titulo: 'Soma de Parcelas Diverge do Valor Global',
+        descricao: `A soma das ${parcelas.length} parcelas listadas (R$ ${fmt(
+          somaParcelas,
+        )}) não corresponde ao valor global contratual de R$ ${fmt(
+          valorGlobalDetectado,
+        )}. Diferença de R$ ${fmt(diff)}.`,
+        localizacao: 'Cláusula de Valor/Pagamento',
+        trechoOriginal: parcelas.map((p) => p.trecho).join(' + '),
+        encontrado: `R$ ${fmt(somaParcelas)} (soma das parcelas)`,
+        esperado: `R$ ${fmt(valorGlobalDetectado)} (valor global)`,
+      })
+    }
+  }
+
+  // 3c. Percentuais que somam mais de 100%
+  // Procura blocos com 3+ percentuais próximos (ex.: rateio/cronograma)
+  const regexPct = /([0-9]+(?:,[0-9]+)?)\s*%\s*(?:\(([^()]+)\))?/g
+  const todosPcts: { valor: number; trecho: string; idx: number }[] = []
+  let mPct
+  while ((mPct = regexPct.exec(textoContrato)) !== null) {
+    const v = parseFloat(mPct[1].replace(',', '.'))
+    if (!isNaN(v) && v > 0 && v <= 200) {
+      todosPcts.push({ valor: v, trecho: mPct[0], idx: mPct.index })
+    }
+  }
+  // Agrupa percentuais próximos (janela de 300 chars) que somem > 100
+  if (todosPcts.length >= 3) {
+    for (let i = 0; i + 3 <= todosPcts.length; i++) {
+      const grupo = [todosPcts[i], todosPcts[i + 1], todosPcts[i + 2]]
+      // Verifica continuidade textual (janela)
+      const span = grupo[2].idx - grupo[0].idx
+      if (span > 300) continue
+      const soma = grupo.reduce((a, b) => a + b.valor, 0)
+      if (soma > 100.01) {
+        inconsistencias.push({
+          tipo: 'divergencia_aritmetica',
+          titulo: 'Percentuais Somam Mais de 100%',
+          descricao: `Em um mesmo bloco, os percentuais ${grupo
+            .map((g) => g.valor + '%')
+            .join(
+              ', ',
+            )} somam ${soma.toFixed(2)}%, excedendo o teto de 100% esperado para rateio/distribuição.`,
+          localizacao: 'Cláusula de Distribuição/Rateio',
+          trechoOriginal: grupo.map((g) => g.trecho).join(' + '),
+          encontrado: `${soma.toFixed(2)}% (soma dos percentuais)`,
+          esperado: '100% (total de rateio)',
+        })
+        break // um apontamento por bloco de rateio basta
+      }
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // 4. Identificador conflitante (generalizado)
+  //    Detecta duplicação de número de contrato, processo ou pregão
+  //    com valores diferentes em pontos distintos do mesmo documento.
+  // ───────────────────────────────────────────────────────────────
+  const coletarIdentificadores = (
+    regex: RegExp,
+    rotulo: string,
+  ): { valor: string; trecho: string }[] => {
+    const out: { valor: string; trecho: string }[] = []
+    let m
+    const re = new RegExp(regex.source, regex.flags)
+    while ((m = re.exec(textoContrato)) !== null) {
+      out.push({ valor: m[1].trim(), trecho: m[0].trim() })
+    }
+    return out
+  }
+
+  const gruposIds: { rotulo: string; itens: { valor: string; trecho: string }[] }[] = [
+    {
+      rotulo: 'pregão eletrônico',
+      itens: coletarIdentificadores(
+        /(?:preg[ãa]o\s+eletr[ôo]nico\s+(?:n[ºo°]?\s*)?)([0-9]+\/[0-9]{4})/gi,
+        'pregão',
+      ),
+    },
+    {
+      rotulo: 'contrato',
+      itens: coletarIdentificadores(
+        /(?:termo\s+de\s+contrato|contrato)\s+(?:n[ºo°]?\s*[:.]?\s*)([0-9]+(?:[/-][0-9]{4})?)/gi,
+        'contrato',
+      ),
+    },
+    {
+      rotulo: 'processo administrativo',
+      itens: coletarIdentificadores(
+        /processo(?:\s+adm(?:inistrativo)?)?\s+(?:n[ºo°]?\s*[:.]?\s*)([0-9]+(?:[./-][0-9]{4})?)/gi,
+        'processo',
+      ),
+    },
   ]
-  if (pregaoMatches.length >= 2) {
-    const nums = [...new Set(pregaoMatches.map((m) => m[1]))]
-    if (nums.length > 1) {
+
+  for (const g of gruposIds) {
+    const unicos = [...new Set(g.itens.map((i) => i.valor))]
+    if (g.itens.length >= 2 && unicos.length > 1) {
       inconsistencias.push({
         tipo: 'identificador_conflitante',
-        titulo: 'Identificadores Conflitantes no Mesmo Documento',
-        descricao: `Encontradas menções a pregões distintos no corpo do mesmo contrato: ${nums.join(' e ')}.`,
-        localizacao: 'Preâmbulo e Cláusula Primeira',
-        trechoOriginal: pregaoMatches.map((m) => m[0]).join(' vs '),
-        encontrado: nums.join(' e '),
-        esperado: nums[0],
+        titulo: `Identificadores Conflitantes de ${g.rotulo}`,
+        descricao: `Encontradas menções distintas de ${g.rotulo} no mesmo documento: ${unicos.join(
+          ' vs ',
+        )}. Cada instrumento deve referenciar um único número de ${g.rotulo}.`,
+        localizacao: 'Preâmbulo e Cláusulas',
+        trechoOriginal: g.itens.map((i) => i.trecho).join(' vs '),
+        encontrado: unicos.join(' e '),
+        esperado: unicos[0],
       })
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // 5. NOVA CHECAGEM: Prazo incoerente
+  //    Detecta quando o prazo em meses não é compatível com as datas
+  //    de início e fim mencionadas no contrato.
+  // ───────────────────────────────────────────────────────────────
+  const matchPrazoMeses = textoContrato.match(
+    /(?:prazo\s+(?:de\s+)?(?:vig[eê]ncia|execu[çc][ãa]o)?|vig[eê]ncia\s+de)\s*(?:de\s+)?([0-9]+)\s*(?:\([^)]*\)\s*)?(?:meses|m[eê]s)\b/i,
+  )
+  const prazoMesesDeclarado = matchPrazoMeses ? parseInt(matchPrazoMeses[1], 10) : null
+
+  // Procura pares de datas "início" e "fim"/"término"
+  const regexData = /\b([0-3]?[0-9])[/.-]([0-1]?[0-9])[/.-](20[0-9]{2})\b/g
+  const datas: { iso: string; trecho: string; idx: number }[] = []
+  let mD
+  while ((mD = regexData.exec(textoContrato)) !== null) {
+    const dia = mD[1].padStart(2, '0')
+    const mes = mD[2].padStart(2, '0')
+    const ano = mD[3]
+    datas.push({ iso: `${ano}-${mes}-${dia}`, trecho: mD[0], idx: mD.index })
+  }
+
+  if (prazoMesesDeclarado && datas.length >= 2) {
+    // Tenta casar início/fim por contexto textual próximo
+    let dataInicio: { iso: string; trecho: string } | undefined
+    let dataFim: { iso: string; trecho: string } | undefined
+    for (const d of datas) {
+      const contexto = textoContrato.substring(Math.max(0, d.idx - 60), d.idx + 30).toLowerCase()
+      if (
+        !dataInicio &&
+        (contexto.includes('início') ||
+          contexto.includes('inicio') ||
+          contexto.includes('ordem de serviço') ||
+          contexto.includes('assinatura'))
+      ) {
+        dataInicio = d
+      } else if (
+        !dataFim &&
+        (contexto.includes('término') ||
+          contexto.includes('termino') ||
+          contexto.includes('fim') ||
+          contexto.includes('conclusão') ||
+          contexto.includes('conclusao') ||
+          contexto.includes('vigência'))
+      ) {
+        dataFim = d
+      }
+    }
+    // Fallback: primeira data = início, última = fim
+    if (!dataInicio) dataInicio = datas[0]
+    if (!dataFim) dataFim = datas[datas.length - 1]
+
+    if (dataInicio && dataFim && dataInicio.iso !== dataFim.iso) {
+      const d1 = new Date(dataInicio.iso + 'T00:00:00Z')
+      const d2 = new Date(dataFim.iso + 'T00:00:00Z')
+      if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+        const diffMeses = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+        const mesesCalculados = Math.round(diffMeses)
+        // Tolerância de 1 mês
+        if (Math.abs(mesesCalculados - prazoMesesDeclarado) > 1) {
+          inconsistencias.push({
+            tipo: 'prazo_incoerente',
+            titulo: 'Prazo em Meses Incompatível com as Datas',
+            descricao: `O contrato declara prazo de ${prazoMesesDeclarado} meses, porém as datas citadas (${dataInicio.trecho} a ${dataFim.trecho}) compreendem aproximadamente ${mesesCalculados} meses — diferença de ${Math.abs(
+              mesesCalculados - prazoMesesDeclarado,
+            )} meses.`,
+            localizacao: 'Cláusula de Vigência/Prazos',
+            trechoOriginal: `${matchPrazoMeses![0]} (entre ${dataInicio.trecho} e ${dataFim.trecho})`,
+            encontrado: `${prazoMesesDeclarado} meses (declarado)`,
+            esperado: `≈ ${mesesCalculados} meses (datas)`,
+          })
+        }
+      }
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // 6. NOVA CHECAGEM: Valor por extenso ausente ou incorreto
+  //    Detecta valores monetários relevantes (>= R$ 10.000) que não são
+  //    acompanhados do extenso entre parênteses, ou cujo extenso está
+  //    errado. Para evitar ruído, prioriza o valor global/total do
+  //    contrato; se não houver, avalia o maior valor do documento.
+  // ───────────────────────────────────────────────────────────────
+  const regexValorMoeda = /R\$\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)\s*(\([^)]+\))?/g
+  const valoresMoeda: {
+    valor: number
+    trecho: string
+    idx: number
+    extenso: string | null
+    contexto: string
+  }[] = []
+  let mV
+  while ((mV = regexValorMoeda.exec(textoContrato)) !== null) {
+    const rawNum = mV[1].replace(/\./g, '').replace(',', '.')
+    const valor = parseFloat(rawNum)
+    if (isNaN(valor) || valor < 10000) continue // só valores relevantes
+    valoresMoeda.push({
+      valor,
+      trecho: mV[0],
+      idx: mV.index!,
+      extenso: mV[2] ? mV[2].replace(/[()]/g, '').trim() : null,
+      contexto: textoContrato.substring(Math.max(0, mV.index! - 40), mV.index! + 120),
+    })
+  }
+
+  // Seleciona os valores a validar: os que aparecem em contexto de
+  // "valor global/total/contratual" + (no máximo) o maior valor do doc.
+  const fmt = (n: number) =>
+    n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const alvos: typeof valoresMoeda = []
+  for (const v of valoresMoeda) {
+    const ctx = v.contexto.toLowerCase()
+    if (
+      ctx.includes('valor global') ||
+      ctx.includes('valor total') ||
+      ctx.includes('valor contratual') ||
+      ctx.includes('valor do contrato') ||
+      ctx.includes('preço total') ||
+      ctx.includes('preco total')
+    ) {
+      alvos.push(v)
+    }
+  }
+  // Se não encontrou nenhum valor "global", adiciona o maior valor
+  if (alvos.length === 0 && valoresMoeda.length > 0) {
+    const maior = valoresMoeda.reduce((a, b) => (b.valor > a.valor ? b : a))
+    alvos.push(maior)
+  }
+  // Deduplica por valor (o mesmo valor pode aparecer várias vezes no
+  // texto — preâmbulo, cláusula de valor, cronograma — e geraria
+  // apontamentos repetidos). Mantém a primeira ocorrência de cada valor.
+  const valoresVistos = new Set<number>()
+  const alvosUnicos = alvos.filter((a) => {
+    if (valoresVistos.has(a.valor)) return false
+    valoresVistos.add(a.valor)
+    return true
+  })
+  // Limita a 3 apontamentos para não inundar a aba
+  const alvosLimitados = alvosUnicos.slice(0, 3)
+
+  for (const v of alvosLimitados) {
+    const temExtensoProximo =
+      v.extenso ||
+      /\([^)]*(reais|mil|milh[ãa]o|bilh[ãa]o|cento)[^)]*\)/i.test(
+        textoContrato.substring(v.idx, v.idx + 200),
+      )
+
+    if (!temExtensoProximo) {
+      inconsistencias.push({
+        tipo: 'valor_extenso_ausente',
+        titulo: 'Valor Monetário sem Extenso Entre Parênteses',
+        descricao: `O valor R$ ${fmt(
+          v.valor,
+        )} aparece sem o respectivo valor por extenso entre parênteses, exigência formal de contratos públicos (art. 15 da Lei 8.666/93 e praxe da Lei 14.133/21).`,
+        localizacao: `Trecho: "${v.trecho}"`,
+        trechoOriginal: v.trecho,
+        encontrado: `R$ ${fmt(v.valor)} (sem extenso)`,
+        esperado: `R$ ${fmt(v.valor)} (${numeroPorExtenso(v.valor) || 'valor por extenso'})`,
+      })
+    } else if (v.extenso) {
+      // Há extenso — valida se está correto
+      const extensoEsperado = numeroPorExtenso(v.valor)
+      if (extensoEsperado) {
+        const norm = (s: string) =>
+          s
+            .toLowerCase()
+            .replace(/\b(de\s+)?reais\b/g, '')
+            .replace(/[.,;:]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+        if (norm(v.extenso) && norm(extensoEsperado) !== norm(v.extenso)) {
+          inconsistencias.push({
+            tipo: 'valor_extenso_ausente',
+            titulo: 'Valor por Extenso Incorreto',
+            descricao: `O valor R$ ${fmt(
+              v.valor,
+            )} está acompanhado do extenso "(${v.extenso})", mas o correto seria "(${extensoEsperado})".`,
+            localizacao: `Trecho: "${v.trecho}"`,
+            trechoOriginal: v.trecho,
+            encontrado: `R$ ${fmt(v.valor)} (${v.extenso})`,
+            esperado: `R$ ${fmt(v.valor)} (${extensoEsperado})`,
+          })
+        }
+      }
     }
   }
 

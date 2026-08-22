@@ -170,13 +170,17 @@ export default function Layout({ children }: LayoutProps) {
 
                   <div className="p-3 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
                     <h4 className="font-semibold text-slate-900 dark:text-slate-200 mb-1">
-                      3. As 4 verificações de problemas no texto
+                      3. Verificações de problemas no texto
                     </h4>
                     <ul className="list-disc pl-4 text-xs space-y-1 text-slate-600 dark:text-slate-400">
                       <li>Referência a cláusula que não existe no contrato.</li>
                       <li>Número por extenso diferente do algarismo (ex: 12 (dez)).</li>
                       <li>Conta errada ou limite de mudanças acima da Lei 14.133.</li>
                       <li>Identificador de pregão/contrato conflitante no documento.</li>
+                      <li>Prazo em meses incompatível com as datas do contrato.</li>
+                      <li>
+                        Valor monetário sem o extenso entre parênteses ou com extenso incorreto.
+                      </li>
                     </ul>
                   </div>
                 </div>

@@ -9,6 +9,14 @@ export type TipoChecagemInconsistencia =
   | 'extenso_divergente'
   | 'divergencia_aritmetica'
   | 'identificador_conflitante'
+  // Os dois tipos abaixo são produzidos pelo motor determinístico
+  // (sigoEngine.executarChecagensCoerencia), mas NÃO existem como
+  // valores válidos no select `tipo_checagem` da collection
+  // `inconsistencias` do PocketBase. Eles são normalizados para um
+  // dos 4 valores acima em `normalizarTipoChecagem` (ContratoUpload)
+  // antes de persistir, preservando titulo/descricao para diferenciação.
+  | 'prazo_incoerente'
+  | 'valor_extenso_ausente'
 export type TipoObra =
   | 'Edificação'
   | 'Saneamento'

@@ -12,10 +12,32 @@ import {
   createAditivo,
   createLiquidacao,
 } from '@/services/obrasService'
-import { ObraRecord } from '@/types/sigo'
+import { ObraRecord, TipoChecagemInconsistencia } from '@/types/sigo'
 import { extrairEntidadesDeterministas, formatarMoeda } from '@/lib/sigoEngine'
 import pb from '@/lib/pocketbase/client'
 import { toast } from '@/hooks/use-toast'
+
+/**
+ * O schema da collection `inconsistencias` no PocketBase admite apenas 4
+ * valores em `tipo_checagem`. As novas checagens determinísticas do
+ * sigoEngine (prazo_incoerente e valor_extenso_ausente) são mapeadas
+ * para o valor de schema mais próximo, preservando o titulo/descricao
+ * para diferenciação visual na tela de detalhe.
+ */
+function normalizarTipoChecagem(tipo: string): TipoChecagemInconsistencia {
+  const TIPOS_VALIDOS: TipoChecagemInconsistencia[] = [
+    'clausula_inexistente',
+    'extenso_divergente',
+    'divergencia_aritmetica',
+    'identificador_conflitante',
+  ]
+  if (TIPOS_VALIDOS.includes(tipo as TipoChecagemInconsistencia)) {
+    return tipo as TipoChecagemInconsistencia
+  }
+  if (tipo === 'prazo_incoerente') return 'divergencia_aritmetica'
+  if (tipo === 'valor_extenso_ausente') return 'extenso_divergente'
+  return 'clausula_inexistente'
+}
 
 /**
  * Gera um resumo do contrato em linguagem cidadã (3 a 5 frases) a partir dos
@@ -561,17 +583,27 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
       }
 
       // 2. Salva todas as Inconsistências Detectadas
+      // Normaliza para o formato esperado pela collection `inconsistencias`
+      // do PocketBase. O schema existente só admite 4 valores em
+      // `tipo_checagem`; novos tipos determinísticos (prazo_incoerente,
+      // valor_extenso_ausente) são mapeados para o valor de schema mais
+      // próximo, preservando titulo/descricao para diferenciação visual.
       for (const inc of extracaoFinal.inconsistencias) {
+        const tipoRaw: string = inc.tipo || (inc as any).tipo_checagem || 'clausula_inexistente'
+        const tipoChecagem = normalizarTipoChecagem(tipoRaw)
+        const localizacao =
+          inc.localizacao || (inc as any).localizacao_clausula || 'Corpo do contrato'
+        const trecho = inc.trechoOriginal || (inc as any).trecho_original || ''
+
         await createInconsistencia({
           obra_id: savedObra.id,
-          tipo_checagem: inc.tipo || (inc as any).tipo_checagem || 'clausula_inexistente',
-          titulo: inc.titulo,
-          descricao: inc.descricao,
-          localizacao_clausula:
-            inc.localizacao || (inc as any).localizacao_clausula || 'Corpo do contrato',
-          trecho_original: inc.trechoOriginal || (inc as any).trecho_original || '',
-          valor_encontrado: inc.encontrado || (inc as any).valor_encontrado || '—',
-          valor_esperado: inc.esperado || (inc as any).valor_esperado || '—',
+          tipo_checagem: tipoChecagem,
+          titulo: (inc.titulo || '').slice(0, 500),
+          descricao: (inc.descricao || '').slice(0, 2000),
+          localizacao_clausula: localizacao.slice(0, 500),
+          trecho_original: trecho.slice(0, 2000),
+          valor_encontrado: (inc.encontrado || (inc as any).valor_encontrado || '—').slice(0, 500),
+          valor_esperado: (inc.esperado || (inc as any).valor_esperado || '—').slice(0, 500),
           status_validacao: 'pendente_analise',
         })
       }

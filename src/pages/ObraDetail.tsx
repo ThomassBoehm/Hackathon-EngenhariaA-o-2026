@@ -592,7 +592,7 @@ export default function ObraDetail() {
           )}
         </TabsContent>
 
-        {/* TAB 2: As 4 Checagens de Coerência (Sem IA) */}
+        {/* TAB 2: Checagens de Coerência Contratual (Sem IA) */}
         <TabsContent value="inconsistencias" className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <div>
@@ -601,8 +601,9 @@ export default function ObraDetail() {
                 Problemas no texto
               </h3>
               <p className="text-xs text-slate-500">
-                4 verificações automáticas: cláusula inexistente, número por extenso divergente,
-                conta errada e identificador conflitante.
+                Verificações automáticas de coerência: cláusula inexistente, número por extenso
+                divergente, divergência aritmética, identificador conflitante, prazo incoerente e
+                valor por extenso ausente/incorreto.
               </p>
             </div>
           </div>
@@ -614,7 +615,7 @@ export default function ObraDetail() {
                 Sem problemas
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                O contrato passou nas 4 verificações sem problemas.
+                O contrato passou nas verificações de coerência sem apontamentos.
               </p>
             </div>
           ) : (

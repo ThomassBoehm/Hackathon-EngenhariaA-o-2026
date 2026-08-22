@@ -481,7 +481,7 @@ export default function Dashboard() {
               {/* Problemas no texto */}
               <div>
                 <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
-                  Problemas (4 verificações)
+                  Problemas no texto
                 </label>
                 <Select value={filtroInconsistencia} onValueChange={setFiltroInconsistencia}>
                   <SelectTrigger className="h-8 text-xs">
