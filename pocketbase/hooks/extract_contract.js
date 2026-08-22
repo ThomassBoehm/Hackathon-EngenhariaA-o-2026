@@ -21,7 +21,7 @@ Retorne exatamente um objeto JSON com esta estrutura:
   "orgao": string (órgão ou prefeitura contratante),
   "municipio": string,
   "estado_uf": string (2 letras, ex: "SP"),
-  "tipo_obra": string (apenas um entre: "Edificação", "Saneamento", "Pavimentação/Vias", "Habitação", "Saúde/UBS", "Educação/Escolas", "Serviço Continuado", "Aquisição/Outro"),
+  "tipo_obra": string (apenas um entre: "Infraestrutura Urbana e Mobilidade", "Saneamento Básico e Recursos Hídricos", "Edificações Públicas (Infraestrutura Social)", "Infraestrutura de Energia e Telecomunicações"),
   "contratada_nome": string,
   "contratada_cnpj": string,
   "valor_global_original": number,

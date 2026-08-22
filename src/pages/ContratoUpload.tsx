@@ -411,7 +411,7 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
       numero_contrato: numeroContrato,
       ano_contrato: '2026',
       processo_adm: processoAdm,
-      titulo: `${tipoObra}: ${objeto.substring(0, 80)}`,
+      titulo: `${tituloCurtoTipoObra(tipoObra)}: ${objeto.substring(0, 80)}`,
       objeto: objeto,
       orgao: orgao,
       municipio: municipio,

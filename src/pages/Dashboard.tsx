@@ -463,14 +463,18 @@ export default function Dashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos os Tipos</SelectItem>
-                    <SelectItem value="Edificação">Edificação</SelectItem>
-                    <SelectItem value="Saneamento">Saneamento</SelectItem>
-                    <SelectItem value="Pavimentação/Vias">Pavimentação/Vias</SelectItem>
-                    <SelectItem value="Habitação">Habitação</SelectItem>
-                    <SelectItem value="Saúde/UBS">Saúde/UBS</SelectItem>
-                    <SelectItem value="Educação/Escolas">Educação/Escolas</SelectItem>
-                    <SelectItem value="Serviço Continuado">Serviço Continuado</SelectItem>
-                    <SelectItem value="Aquisição/Outro">Aquisição/Outro</SelectItem>
+                    <SelectItem value="Infraestrutura Urbana e Mobilidade">
+                      Infraestrutura Urbana e Mobilidade
+                    </SelectItem>
+                    <SelectItem value="Saneamento Básico e Recursos Hídricos">
+                      Saneamento Básico e Recursos Hídricos
+                    </SelectItem>
+                    <SelectItem value="Edificações Públicas (Infraestrutura Social)">
+                      Edificações Públicas (Infraestrutura Social)
+                    </SelectItem>
+                    <SelectItem value="Infraestrutura de Energia e Telecomunicações">
+                      Infraestrutura de Energia e Telecomunicações
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
