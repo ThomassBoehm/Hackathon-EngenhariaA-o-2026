@@ -33,7 +33,6 @@ export default function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: 'Dashboard & Obras', href: '/', icon: LayoutDashboard },
     { name: 'Upload & IA', href: '/upload', icon: UploadCloud, badge: 'IA Leitora' },
-    { name: 'Entenda os alertas', href: '/classificacao', icon: ShieldAlert },
     { name: 'Busca Avançada', href: '/busca', icon: Search },
     { name: 'Relatórios & Auditoria', href: '/relatorios', icon: BarChart3 },
   ]

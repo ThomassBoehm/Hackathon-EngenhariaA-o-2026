@@ -9,7 +9,6 @@ import Dashboard from './pages/Dashboard'
 import ObraDetail from './pages/ObraDetail'
 import ObraForm from './pages/ObraForm'
 import ContratoUpload from './pages/ContratoUpload'
-import ClassificacaoPage from './pages/ClassificacaoPage'
 import BuscaAvancada from './pages/BuscaAvancada'
 import RelatoriosPage from './pages/RelatoriosPage'
 import NotFound from './pages/NotFound'
@@ -27,7 +26,6 @@ const App = () => (
           <Route path="/obras/:id" element={<ObraDetail />} />
           <Route path="/obras/:id/editar" element={<ObraForm />} />
           <Route path="/upload" element={<ContratoUpload />} />
-          <Route path="/classificacao" element={<ClassificacaoPage />} />
           <Route path="/busca" element={<BuscaAvancada />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="*" element={<NotFound />} />
