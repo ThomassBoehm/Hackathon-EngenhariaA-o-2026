@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   HelpCircle,
   UploadCloud,
-  PlusCircle,
   Search,
   ArrowUpDown,
   Layers,
@@ -181,15 +180,6 @@ export default function Dashboard() {
               <Button className="bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-900/40">
                 <UploadCloud className="h-4 w-4 mr-2" />
                 Extrair Novo Contrato (PDF)
-              </Button>
-            </Link>
-            <Link to="/obras/nova">
-              <Button
-                variant="outline"
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Cadastrar Obra Manual
               </Button>
             </Link>
           </div>
