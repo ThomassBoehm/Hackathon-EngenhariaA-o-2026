@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T16:07:04.327Z",
+  "generatedAt": "2026-08-22T16:30:03.801Z",
   "collections": [
     {
       "name": "users",
@@ -482,7 +482,9 @@
             "clausula_inexistente",
             "extenso_divergente",
             "divergencia_aritmetica",
-            "identificador_conflitante"
+            "identificador_conflitante",
+            "prazo_incoerente",
+            "valor_sem_extenso"
           ]
         },
         {
