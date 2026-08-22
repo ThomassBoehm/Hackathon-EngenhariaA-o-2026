@@ -50,7 +50,8 @@ function preencherObrigatorios(obra: Record<string, any>) {
       if (!lacunas.includes('valor_global')) lacunas.push('valor_global')
     }
   }
-  obra.campos_nao_identificados = lacunas
+  // Campo de texto no PocketBase: grava a lista separada por vírgula.
+  obra.campos_nao_identificados = lacunas.join(', ')
   return { obra, lacunas }
 }
 
@@ -60,12 +61,13 @@ function normalizarTipoChecagem(tipo: string): TipoChecagemInconsistencia {
     'extenso_divergente',
     'divergencia_aritmetica',
     'identificador_conflitante',
+    'prazo_incoerente',
+    'valor_extenso_ausente',
   ]
   if (TIPOS_VALIDOS.includes(tipo as TipoChecagemInconsistencia)) {
     return tipo as TipoChecagemInconsistencia
   }
-  if (tipo === 'prazo_incoerente') return 'divergencia_aritmetica'
-  if (tipo === 'valor_extenso_ausente') return 'extenso_divergente'
+  // Tipo desconhecido (ex.: inventado pela IA) não vira outro tipo por engano.
   return 'clausula_inexistente'
 }
 
@@ -531,6 +533,8 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de [X]% sobre o saldo reman
         0,
       ),
       origem_extracao: file ? `upload_arquivo (${file.name})` : 'upload_ia',
+      // Texto integral: base de conhecimento do chat de dúvidas do contrato.
+      texto_contrato: textoParaAnalisar,
       extracao_ia_raw: {
         motor: 'sigoEngine (determinístico) + LLM complementar',
         arquivo_origem: file?.name || 'texto_colado',
@@ -614,6 +618,8 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de [X]% sobre o saldo reman
           valor_encontrado: (inc.encontrado || (inc as any).valor_encontrado || '—').slice(0, 500),
           valor_esperado: (inc.esperado || (inc as any).valor_esperado || '—').slice(0, 500),
           status_validacao: 'pendente_analise',
+          // Preserva a procedência: motor determinístico vs sugestão da IA.
+          origem: (inc as any).origem === 'ia' ? 'ia' : 'deterministica',
         })
       }
 

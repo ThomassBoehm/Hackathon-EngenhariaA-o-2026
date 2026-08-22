@@ -1300,3 +1300,40 @@ export function getStatusBadgeInfo(status: StatusClassificacao) {
       }
   }
 }
+
+/** Rótulos em linguagem de cidadão para os tipos de checagem de coerência. */
+export const ROTULO_CHECAGEM: Record<string, { titulo: string; explicacao: string }> = {
+  clausula_inexistente: {
+    titulo: 'Cláusula citada não existe',
+    explicacao: 'O contrato remete a uma cláusula que não consta no próprio documento.',
+  },
+  extenso_divergente: {
+    titulo: 'Número e valor por extenso não batem',
+    explicacao: 'O valor em algarismos difere do valor escrito por extenso na mesma cláusula.',
+  },
+  divergencia_aritmetica: {
+    titulo: 'Conta que não fecha',
+    explicacao: 'A soma das parcelas não corresponde ao total declarado.',
+  },
+  identificador_conflitante: {
+    titulo: 'Identificadores conflitantes',
+    explicacao: 'O mesmo contrato ou processo aparece com números diferentes no documento.',
+  },
+  prazo_incoerente: {
+    titulo: 'Prazos incoerentes',
+    explicacao: 'As datas ou prazos informados se contradizem.',
+  },
+  valor_extenso_ausente: {
+    titulo: 'Valor sem escrita por extenso',
+    explicacao:
+      'O valor aparece só em algarismos, sem a forma por extenso que permitiria conferir.',
+  },
+}
+
+/** Nunca quebra a tela: tipo ausente ou desconhecido tem rótulo neutro. */
+export function getRotuloChecagem(tipo?: string | null) {
+  if (!tipo || !ROTULO_CHECAGEM[tipo]) {
+    return { titulo: 'Verificação de coerência', explicacao: 'Apontamento no texto do contrato.' }
+  }
+  return ROTULO_CHECAGEM[tipo]
+}

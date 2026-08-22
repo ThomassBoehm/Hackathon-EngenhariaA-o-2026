@@ -9,6 +9,8 @@ export type TipoChecagemInconsistencia =
   | 'extenso_divergente'
   | 'divergencia_aritmetica'
   | 'identificador_conflitante'
+  | 'prazo_incoerente'
+  | 'valor_extenso_ausente'
   // Os dois tipos abaixo são produzidos pelo motor determinístico
   // (sigoEngine.executarChecagensCoerencia), mas NÃO existem como
   // valores válidos no select `tipo_checagem` da collection
@@ -18,10 +20,14 @@ export type TipoChecagemInconsistencia =
   | 'prazo_incoerente'
   | 'valor_extenso_ausente'
 export type TipoObra =
-  | 'Infraestrutura Urbana e Mobilidade'
-  | 'Saneamento Básico e Recursos Hídricos'
-  | 'Edificações Públicas (Infraestrutura Social)'
-  | 'Infraestrutura de Energia e Telecomunicações'
+  | 'Edificação'
+  | 'Saneamento'
+  | 'Pavimentação/Vias'
+  | 'Habitação'
+  | 'Saúde/UBS'
+  | 'Educação/Escolas'
+  | 'Serviço Continuado'
+  | 'Aquisição/Outro'
 
 export interface ObraRecord {
   id: string
@@ -70,6 +76,8 @@ export interface ObraRecord {
   qtd_aditivos?: number
   percentual_aditado_total?: number
   origem_extracao?: string
+  /** Texto integral extraído do PDF. Base de conhecimento do chat de dúvidas. */
+  texto_contrato?: string
   resumo?: string
   extracao_ia_raw?: {
     modelo?: string
@@ -116,6 +124,8 @@ export interface InconsistenciaRecord {
   valor_esperado?: string
   status_validacao: 'pendente_analise' | 'confirmado_fiscal' | 'desconsiderado'
   parecer_fiscal?: string
+  /** 'deterministica' = motor do SIGO; 'ia' = sugestão do modelo, não verificada. */
+  origem?: 'deterministica' | 'ia'
   created?: string
   updated?: string
 }
