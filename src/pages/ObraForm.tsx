@@ -46,7 +46,7 @@ export default function ObraForm() {
     orgao: 'Secretaria Municipal de Obras e Habitação',
     municipio: 'São Paulo',
     estado_uf: 'SP',
-    tipo_obra: 'Edificação',
+    tipo_obra: 'Edificações Públicas (Infraestrutura Social)',
     contratada_nome: '',
     contratada_cnpj: '',
     valor_global_original: 1000000,

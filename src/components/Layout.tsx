@@ -32,7 +32,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: 'Dashboard & Obras', href: '/', icon: LayoutDashboard },
-    { name: 'Upload & IA', href: '/upload', icon: UploadCloud, badge: 'IA Leitora' },
+    { name: 'Upload & IA', href: '/upload', icon: UploadCloud },
     { name: 'Busca Avançada', href: '/busca', icon: Search },
     { name: 'Relatórios & Auditoria', href: '/relatorios', icon: BarChart3 },
   ]
@@ -99,11 +99,6 @@ export default function Layout({ children }: LayoutProps) {
                     className={`h-4 w-4 ${isActive ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500'}`}
                   />
                   <span>{item.name}</span>
-                  {item.badge && (
-                    <span className="px-1.5 py-0.2 text-[10px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950 dark:text-amber-300">
-                      {item.badge}
-                    </span>
-                  )}
                 </NavLink>
               )
             })}
@@ -210,11 +205,6 @@ export default function Layout({ children }: LayoutProps) {
                     <Icon className="h-4 w-4 text-blue-600" />
                     <span>{item.name}</span>
                   </div>
-                  {item.badge && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      {item.badge}
-                    </Badge>
-                  )}
                 </Link>
               )
             })}
