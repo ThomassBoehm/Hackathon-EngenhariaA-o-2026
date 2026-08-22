@@ -41,7 +41,7 @@ export function calcularClassificacao(params: CalculoClassificacaoParams): Resul
     porcentagemPrazoDecorrido = 0,
     porcentagemLiquidada = 0,
     temMarcoVencido = false,
-    periodicidadeTipo = 'explícita',
+    periodicidadeTipo = 'ausente',
     valorGlobal = 0,
     multaMaxPercentual = 10,
     multaRemissaoExterna = false,
@@ -841,26 +841,6 @@ export interface ExtracaoCompletaResultado {
 }
 
 /**
- * Rótulo curto de cada categoria de TipoObra, usado na montagem do título
- * exibido da obra (os nomes completos são longos demais para o prefixo do
- * título). O campo `tipo_obra` continua armazenando o nome completo.
- */
-export function tituloCurtoTipoObra(tipo: string | undefined): string {
-  switch (tipo) {
-    case 'Infraestrutura Urbana e Mobilidade':
-      return 'Infraestrutura Urbana'
-    case 'Saneamento Básico e Recursos Hídricos':
-      return 'Saneamento'
-    case 'Edificações Públicas (Infraestrutura Social)':
-      return 'Edificações Públicas'
-    case 'Infraestrutura de Energia e Telecomunicações':
-      return 'Energia e Telecom'
-    default:
-      return tipo || 'Obra'
-  }
-}
-
-/**
  * Motor completo de extração determinística e estruturação para qualquer contrato ou PDF carregado
  */
 export function extrairEntidadesDeterministas(
@@ -1211,7 +1191,7 @@ export function extrairEntidadesDeterministas(
     numero_contrato: numeroContrato,
     ano_contrato: '2026',
     processo_adm: processoAdm,
-    titulo: `${tituloCurtoTipoObra(tipoObra)}: ${objeto.substring(0, 75)}`,
+    titulo: `${tipoObra}: ${objeto.substring(0, 75)}`,
     objeto: objeto,
     orgao: orgao,
     municipio: municipio,
