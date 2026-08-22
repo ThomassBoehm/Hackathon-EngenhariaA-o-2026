@@ -1,14 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  UploadCloud,
-  Sparkles,
-  Loader2,
-  FileCheck,
-  AlertCircle,
-  FileWarning,
-  Info,
-} from 'lucide-react'
+import { UploadCloud, Sparkles, Loader2, FileCheck, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -703,35 +695,6 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
           )}
         </CardContent>
       </Card>
-
-      {/* Explicação da Filosofia SIGO */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600 dark:text-slate-400">
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="font-bold text-blue-900 dark:text-blue-300 block">1. A IA Lê</span>
-          <p>
-            Converte texto jurídico não estruturado em campos tabulares (vigências, datas, multas,
-            eventos-âncora).
-          </p>
-        </div>
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="font-bold text-amber-900 dark:text-amber-300 block">
-            2. O Sistema Calcula
-          </span>
-          <p>
-            Aplica a fórmula determinística G = A × log₁₀(V) × S, cruza com o calendário e executa
-            as 4 checagens sem IA.
-          </p>
-        </div>
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
-          <span className="font-bold text-emerald-900 dark:text-emerald-300 block">
-            3. O Fiscal Decide
-          </span>
-          <p>
-            O fiscal valida apontamentos com o PDF original lado a lado, sem ter que reler 300
-            páginas.
-          </p>
-        </div>
-      </div>
     </div>
   )
 }
