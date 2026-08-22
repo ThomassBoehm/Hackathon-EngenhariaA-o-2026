@@ -1157,6 +1157,7 @@ export default function ObraDetail() {
                   <SelectContent>
                     <SelectItem value="Contratada">Contratada</SelectItem>
                     <SelectItem value="Administração">Administração</SelectItem>
+                    <SelectItem value="Contratante">Contratante</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

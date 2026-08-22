@@ -2,7 +2,7 @@ export type StatusClassificacao = 'no_ritmo' | 'fora_do_ritmo' | 'prazo_vencido'
 
 export type PeriodicidadeTipo = 'explícita' | 'por etapa' | 'inferida' | 'ausente'
 export type ConfiancaTipo = 'alta' | 'média' | 'baixa'
-export type ResponsavelTipo = 'Contratada' | 'Administração'
+export type ResponsavelTipo = 'Contratada' | 'Administração' | 'Contratante'
 export type StatusObrigacao = 'pendente' | 'no_prazo' | 'vencido' | 'cumprido' | 'sem_ancora'
 export type TipoChecagemInconsistencia =
   | 'clausula_inexistente'
@@ -28,6 +28,10 @@ export type TipoObra =
   | 'Educação/Escolas'
   | 'Serviço Continuado'
   | 'Aquisição/Outro'
+  | 'Infraestrutura Urbana e Mobilidade'
+  | 'Saneamento Básico e Recursos Hídricos'
+  | 'Edificações Públicas (Infraestrutura Social)'
+  | 'Infraestrutura de Energia e Telecomunicações'
 
 export interface ObraRecord {
   id: string

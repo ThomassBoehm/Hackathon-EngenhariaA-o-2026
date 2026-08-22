@@ -797,7 +797,7 @@ export function executarChecagensCoerencia(
 export interface ObrigacaoExtraida {
   clausula: string
   descricao: string
-  responsavel: 'Contratada' | 'Administração'
+  responsavel: 'Contratada' | 'Administração' | 'Contratante'
   tipo_regua: 'marco_contratual' | 'liquidacao_medicao' | 'administrativo'
   prazo_texto: string
   data_limite?: string

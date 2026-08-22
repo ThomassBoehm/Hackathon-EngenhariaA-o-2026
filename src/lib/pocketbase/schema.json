@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T16:30:03.801Z",
+  "generatedAt": "2026-08-22T16:41:25.070Z",
   "collections": [
     {
       "name": "users",
@@ -116,7 +116,11 @@
             "Saúde/UBS",
             "Educação/Escolas",
             "Serviço Continuado",
-            "Aquisição/Outro"
+            "Aquisição/Outro",
+            "Infraestrutura Urbana e Mobilidade",
+            "Saneamento Básico e Recursos Hídricos",
+            "Edificações Públicas (Infraestrutura Social)",
+            "Infraestrutura de Energia e Telecomunicações"
           ]
         },
         {
@@ -370,7 +374,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["Contratada", "Administração"]
+          "selectValues": ["Contratada", "Administração", "Contratante"]
         },
         {
           "name": "tipo_regua",
@@ -549,6 +553,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "valor_extenso_ausente",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE INDEX idx_incons_obra ON inconsistencias (obra_id)"]
