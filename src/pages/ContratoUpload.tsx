@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UploadCloud,
-  FileText,
   Sparkles,
   Loader2,
   FileCheck,
@@ -22,7 +21,7 @@ import {
   createLiquidacao,
 } from '@/services/obrasService'
 import { ObraRecord } from '@/types/sigo'
-import { extrairEntidadesDeterministas, formatarMoeda } from '@/lib/sigoEngine'
+import { extrairEntidadesDeterministas } from '@/lib/sigoEngine'
 import pb from '@/lib/pocketbase/client'
 import { toast } from '@/hooks/use-toast'
 
@@ -34,54 +33,15 @@ export default function ContratoUpload() {
   const [progress, setProgress] = useState(0)
   const [processStep, setProcessStep] = useState<string>('')
 
-  // Modelos de Contratos Predefinidos para Teste Rápido (Exemplos do Hackathon)
-  const exemplosContratos = [
-    {
-      nome: 'Contrato 041/2026 - São Pedro do Turvo (Obra Habitacional)',
-      tipo: 'Edificação/Habitação',
-      orgao: 'Secretaria de Obras e Habitação',
-      municipio: 'São Pedro do Turvo/SP',
-      valor: 2734800,
-      prazo: 12,
-      textoExemplo: `TERMO DE CONTRATO Nº 041/2026. PROCESSO ADMINISTRATIVO Nº PA-089/2025. CONCORRÊNCIA PÚBLICA Nº 005/2025.
-CLÁUSULA PRIMEIRA - DO OBJETO: Contratação de empresa especializada em engenharia civil para execução de 20 unidades habitacionais térreas em alvenaria estrutural no Loteamento Nova Esperança.
-CLÁUSULA SEGUNDA - DA EXECUÇÃO: A CONTRATADA obriga-se a entregar a totalidade das alvenarias e lajes das 20 unidades habitacionais devidamente concluídas no prazo improrrogável de 120 (cento e vinte) dias da emissão da OS (item 2.7.1).
-CLÁUSULA QUARTA - DO VALOR E MEDIÇÃO: O valor global deste contrato é de R$ 2.734.800,00 (dois milhões, setecentos e trinta e quatro mil e oitocentos reais). As medições serão realizadas a cada 30 (trinta) dias pela Fiscalização.
-CLÁUSULA SEXTA - DOS ADITIVOS: O presente contrato poderá ser aditado em até 50% (cinquenta por cento) do seu valor inicial atualizado.
-CLÁUSULA NONA - DAS SANÇÕES: Cláusula 9.1.1.d prevê multa moratória diária de 0,2% até o limite de 20% sobre o saldo remanescente em caso de mora superior a 30 dias.
-CLÁUSULA DÉCIMA PRIMEIRA - DAS DISPOSIÇÕES FINAIS: Conforme sanções expressamente capituladas no item 14.8 deste instrumento contratual.`,
-    },
-    {
-      nome: 'Contrato 133/2026 - Pontal (Serviço Continuado Pavimentação)',
-      tipo: 'Pavimentação/Vias',
-      orgao: 'Secretaria de Serviços Urbanos',
-      municipio: 'Pontal/SP',
-      valor: 469470,
-      prazo: 12,
-      textoExemplo: `TERMO DE CONTRATO Nº 133/2026. PREGÃO ELETRÔNICO Nº 012/2026. PROCESSO PA-045/2026.
-PREÂMBULO: O Município de Pontal celebra o presente contrato decorrente do Pregão Eletrônico nº 018/2026.
-CLÁUSULA PRIMEIRA - DO OBJETO: Prestação de serviços contínuos de conservação, recomposição de pavimento asfáltico em CBUQ, fresagem e tapa-buracos.
-CLÁUSULA SEGUNDA - DO VALOR: O valor global estimado é de R$ 469.470,00 (quatrocentos e sessenta e nove mil, quatrocentos e setenta reais).
-CLÁUSULA TERCEIRA - DA MEDIÇÃO: A periodicidade da prestação é de 12 (doze) medições mensais (12 x MÊS).
-CLÁUSULA QUINTA - DA VIGÊNCIA: O prazo de vigência deste instrumento será de 12 (dez) meses.
-CLÁUSULA OITAVA - DAS PENALIDADES: As sanções administrativas seguirão rigorosamente o estipulado no Termo de Referência - Anexo I do Edital.`,
-    },
-    {
-      nome: 'Contrato 092/SME/2026 - São Paulo (Construção de Creche Escola)',
-      tipo: 'Educação/Escolas',
-      orgao: 'Secretaria Municipal de Educação - SME/SP',
-      municipio: 'São Paulo/SP',
-      valor: 5800000,
-      prazo: 14,
-      textoExemplo: `TERMO DE CONTRATO Nº 092/SME/2026. PROCESSO 6016.2026/001899-2. CONCORRÊNCIA Nº 014/2025.
-CLÁUSULA PRIMEIRA - DO OBJETO: Construção de Centro de Educação Infantil (CEI) Tipo 1 com 8 salas de atividades, berçários, refeitório, playground acessível e energia fotovoltaica na Zona Sul de São Paulo.
-CLÁUSULA SEGUNDA - DO VALOR: O valor global contratado é de R$ 5.800.000,00 (cinco milhões e oitocentos mil reais).
-CLÁUSULA TERCEIRA - DAS MEDIÇÕES: Medições mensais a cada 30 (trinta) dias com boletim físico emitido pela fiscalização.
-CLÁUSULA QUINTA - DA MULTA: Multa de 15% (quinze por cento) em caso de descumprimento de prazos parciais.`,
-    },
-  ]
+  // Texto inicial do editor: modelo editável genérico para o fiscal colar o contrato
+  const TEXTO_MODELO_INICIAL = `TERMO DE CONTRATO Nº [número]/2026. PROCESSO ADMINISTRATIVO: PA-XXX/2026.
+CLÁUSULA PRIMEIRA - DO OBJETO: [Descreva o objeto do contrato: execução de obra/serviço...]
+CLÁUSULA SEGUNDA - DO VALOR: O valor global contratado é de R$ [valor] ([valor por extenso]).
+CLÁUSULA TERCEIRA - DA MEDIÇÃO E LIQUIDAÇÃO: Medições mensais a cada 30 (trinta) dias pela fiscalização.
+CLÁUSULA QUARTA - DA VIGÊNCIA E PRAZOS: Prazo de execução de [N] meses contados da Ordem de Serviço.
+CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de [X]% sobre o saldo remanescente em caso de atraso.`
 
-  const [textoManual, setTextoManual] = useState(exemplosContratos[0].textoExemplo)
+  const [textoManual, setTextoManual] = useState(TEXTO_MODELO_INICIAL)
   const [isReadingFile, setIsReadingFile] = useState(false)
   const [fileWarning, setFileWarning] = useState<string | null>(null)
 
@@ -691,44 +651,6 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
           )}
         </CardContent>
       </Card>
-
-      {/* Seletor de Contratos Reais da Validação do Hackathon */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue-600" />
-            Ou teste com os 3 Contratos Reais Analisados no Estudo:
-          </h3>
-          <span className="text-[11px] text-slate-500">Clique para carregar e extrair</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {exemplosContratos.map((ex, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setTextoManual(ex.textoExemplo)
-                toast({
-                  title: 'Contrato carregado',
-                  description: `${ex.nome} pronto para extração.`,
-                })
-              }}
-              className="text-left p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500 hover:shadow-md transition-all space-y-1.5"
-            >
-              <span className="text-xs font-bold text-blue-900 dark:text-blue-300 block line-clamp-1">
-                {ex.nome}
-              </span>
-              <span className="text-[11px] text-slate-500 block">
-                {ex.municipio} · {formatarMoeda(ex.valor)}
-              </span>
-              <Badge variant="secondary" className="text-[10px]">
-                {ex.tipo}
-              </Badge>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Editor do Texto Jurídico Extraído do PDF */}
       <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
