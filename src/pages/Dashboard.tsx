@@ -670,6 +670,19 @@ export default function Dashboard() {
                         </strong>
                       </div>
                     </div>
+
+                    {/* Resumo em linguagem cidadã (preview de 2 linhas) */}
+                    {obra.resumo && (
+                      <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-md border border-blue-200/70 dark:border-blue-900/70">
+                        <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block mb-0.5 flex items-center gap-1">
+                          <Sparkles className="h-3 w-3" />
+                          Resumo do contrato
+                        </span>
+                        <p className="text-[11px] text-slate-700 dark:text-slate-200 leading-snug line-clamp-2">
+                          {obra.resumo}
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
 
                   {/* Footer de Ações */}

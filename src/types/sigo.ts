@@ -66,6 +66,7 @@ export interface ObraRecord {
   qtd_aditivos?: number
   percentual_aditado_total?: number
   origem_extracao?: string
+  resumo?: string
   extracao_ia_raw?: {
     modelo?: string
     tempo_processamento?: string

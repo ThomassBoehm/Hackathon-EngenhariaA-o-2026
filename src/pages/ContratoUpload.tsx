@@ -13,9 +13,64 @@ import {
   createLiquidacao,
 } from '@/services/obrasService'
 import { ObraRecord } from '@/types/sigo'
-import { extrairEntidadesDeterministas } from '@/lib/sigoEngine'
+import { extrairEntidadesDeterministas, formatarMoeda } from '@/lib/sigoEngine'
 import pb from '@/lib/pocketbase/client'
 import { toast } from '@/hooks/use-toast'
+
+/**
+ * Gera um resumo do contrato em linguagem cidadã (3 a 5 frases) a partir dos
+ * dados extraídos. Explica: o que é a obra, onde fica, quanto custa, qual o
+ * prazo e se está tudo em ordem.
+ */
+function gerarResumoCidadao(obra: Record<string, any>): string {
+  const partes: string[] = []
+
+  // 1. O que é a obra
+  let oQue = (obra.objeto || `contratação de ${obra.tipo_obra || 'obra pública'}`).toString().trim()
+  if (oQue.length > 140) oQue = oQue.substring(0, 137).trim() + '...'
+  oQue = oQue.charAt(0).toLowerCase() + oQue.slice(1)
+  partes.push(`Este contrato trata de ${oQue}.`)
+
+  // 2. Onde fica
+  const local = [obra.municipio, obra.estado_uf].filter(Boolean).join('/')
+  const orgao = obra.orgao || 'órgão público'
+  if (local) {
+    partes.push(`A obra fica em ${local} e é de responsabilidade do ${orgao}.`)
+  } else {
+    partes.push(`É de responsabilidade do ${orgao}.`)
+  }
+
+  // 3. Quanto custa
+  const valor = obra.valor_global_atual || obra.valor_global_original || 0
+  partes.push(`O valor total é de ${formatarMoeda(Number(valor))}.`)
+
+  // 4. Qual o prazo
+  const prazo = obra.prazo_vigencia_meses
+  if (prazo) {
+    partes.push(`O prazo de execução é de ${prazo} meses.`)
+  }
+
+  // 5. Se está tudo em ordem
+  const ciclo = obra.periodicidade_dias || 30
+  const carencia = obra.carencia_dias || 15
+  const diasSem = obra.dias_sem_liquidacao || 0
+  let statusTxt: string
+  if (obra.tem_marco_vencido) {
+    statusTxt =
+      'Há um marco contratual vencido (entrega atrasada), o que coloca a obra fora do ritmo de execução.'
+  } else if (diasSem > ciclo + carencia) {
+    statusTxt = `A obra está fora do ritmo: já se passaram ${diasSem} dias sem pagamento, acima do prazo de ${
+      ciclo + carencia
+    } dias do contrato.`
+  } else if (diasSem > ciclo) {
+    statusTxt = `A obra está em atenção: ${diasSem} dias sem pagamento, mas ainda dentro da carência de ${carencia} dias.`
+  } else {
+    statusTxt = 'A obra está dentro do prazo e do ritmo de execução pactuados.'
+  }
+  partes.push(statusTxt)
+
+  return partes.join(' ')
+}
 
 export default function ContratoUpload() {
   const navigate = useNavigate()
@@ -436,8 +491,11 @@ CLÁUSULA QUINTA - DAS PENALIDADES: Multa moratória de 10% (dez por cento) sobr
     setProgress(85)
     setProcessStep('Calculando o status da obra...')
 
+    const resumoCidadao = gerarResumoCidadao(extracaoFinal.obra)
+
     const novaObra: Partial<ObraRecord> = {
       ...extracaoFinal.obra,
+      resumo: resumoCidadao,
       tem_inconsistencias: extracaoFinal.inconsistencias.length > 0,
       qtd_aditivos: extracaoFinal.aditivos.length,
       percentual_aditado_total: extracaoFinal.aditivos.reduce(

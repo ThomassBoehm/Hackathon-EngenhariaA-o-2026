@@ -346,6 +346,31 @@ export default function ObraDetail() {
         </div>
       </div>
 
+      {/* Resumo do Contrato em Linguagem Cidadã */}
+      {obra.resumo && (
+        <Card className="bg-blue-50/60 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 shadow-sm overflow-hidden relative">
+          <div className="absolute left-0 top-0 h-full w-1.5 bg-blue-600" />
+          <CardHeader className="pb-2 pl-6">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+              </div>
+              <CardTitle className="text-base font-bold text-blue-900 dark:text-blue-200">
+                Resumo do contrato
+              </CardTitle>
+            </div>
+            <CardDescription className="text-xs text-blue-700/80 dark:text-blue-300/80">
+              Explicação em linguagem simples para o cidadão
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-6">
+            <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+              {obra.resumo}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Hero Banner de Classificação e Apontamento Principal */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Card Estado & Apontamento */}
